@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fieldify</string>
+    <string name="logo_field">Field</string>
+    <string name="logo_ify">ify</string>
+
+    <!-- Welcome / Onboarding Screen -->
+    <string name="welcome_title_part1">Réservez votre\n</string>
+    <string name="welcome_title_part2">terrain en un clic !</string>
+    <string name="welcome_subtitle">Trouvez et réservez des terrains de foot, tennis, padel et basket près de chez vous.</string>
+    <string name="btn_get_started">Let\'s get started</string>
+    <string name="welcome_already_account_prefix">J\'ai déjà un compte • </string>
+    <string name="welcome_already_account_action">Se connecter</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Bon retour ! 👋</string>
+    <string name="login_subtitle">Connectez-vous à votre compte</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Mot de passe</string>
+    <string name="forgot_password">Mot de passe oublié ?</string>
+    <string name="btn_login">Se connecter</string>
+    <string name="no_account_prefix">Pas encore de compte ? </string>
+    <string name="no_account_action">S\'inscrire</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Créer un compte</string>
+    <string name="register_subtitle">Rejoignez la communauté Fieldify !</string>
+    <string name="hint_full_name">Nom complet</string>
+    <string name="hint_phone">Téléphone</string>
+    <string name="btn_register">S\'inscrire</string>
+    <string name="already_account_prefix">Déjà un compte ? </string>
+    <string name="already_account_action">Se connecter</string>
+
+    <!-- Validation & Messages -->
+    <string name="error_empty_fields">Veuillez remplir tous les champs.</string>
+    <string name="error_invalid_email">Veuillez entrer une adresse email valide.</string>
+    <string name="error_password_length">Le mot de passe doit contenir au moins 6 caractères.</string>
+    <string name="toast_login_success">Connexion réussie ! Bienvenue sur Fieldify.</string>
+    <string name="toast_register_success">Compte Joueur créé avec succès !</string>
+    <string name="toast_forgot_password">Lien de réinitialisation envoyé à votre adresse email.</string>
+</resources>

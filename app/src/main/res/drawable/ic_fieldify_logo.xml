@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Field background rounded rect -->
+    <path
+        android:pathData="M 6,14 C 6,11.8 7.8,10 10,10 L 38,10 C 40.2,10 42,11.8 42,14 L 42,34 C 42,36.2 40.2,38 38,38 L 10,38 C 7.8,38 6,36.2 6,34 Z"
+        android:fillColor="#10B981" />
+
+    <!-- Field border & center line -->
+    <path
+        android:pathData="M 8,12 L 40,12 L 40,36 L 8,36 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000" />
+
+    <!-- Half line -->
+    <path
+        android:pathData="M 24,12 L 24,36"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5" />
+
+    <!-- Center circle -->
+    <path
+        android:pathData="M 24,24 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000" />
+
+    <!-- Location Marker Pin -->
+    <path
+        android:pathData="M 12,4 C 9.2,4 7,6.2 7,9 C 7,12.5 12,18 12,18 C 12,18 17,12.5 17,9 C 17,6.2 14.8,4 12,4 Z"
+        android:fillColor="#FF5500" />
+    <path
+        android:pathData="M 12,9 m -2,0 a 2,2 0 1,0 4,0 a 2,2 0 1,0 -4,0"
+        android:fillColor="#FFFFFF" />
+</vector>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Navy / Dark Palette -->
+    <color name="navy_dark">#0A1128</color>
+    <color name="navy_deeper">#050A18</color>
+    <color name="navy_header">#0B132B</color>
+
+    <!-- Brand Vibrant Orange Palette -->
+    <color name="orange_primary">#FF5500</color>
+    <color name="orange_gradient_start">#FF6B00</color>
+    <color name="orange_gradient_end">#FF4500</color>
+    <color name="orange_pressed">#D94800</color>
+    <color name="orange_glow">#40FF5500</color>
+
+    <!-- Neutral & Card Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="input_bg">#F8FAFC</color>
+    <color name="input_stroke">#E2E8F0</color>
+    <color name="input_stroke_focused">#FF5500</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_subtitle">#94A3B8</color>
+    <color name="text_muted">#CBD5E1</color>
+    <color name="icon_tint">#64748B</color>
+</resources>
