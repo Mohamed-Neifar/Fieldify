@@ -2,21 +2,17 @@ package com.example.fieldify;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.example.fieldify.utils.SessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private SessionManager sessionManager;
+    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,50 +20,52 @@ public class HomeActivity extends AppCompatActivity {
         WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_home);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_home), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-
-        sessionManager = new SessionManager(this);
+        SessionManager sessionManager = new SessionManager(this);
 
         if (!sessionManager.isLoggedIn()) {
-            redirectToLogin();
+            startActivity(new Intent(HomeActivity.this, LoginActivity.class));
+            finish();
             return;
         }
 
-        initUI();
-    }
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        setupBottomNavigation();
 
-    private void initUI() {
-        TextView tvUserName = findViewById(R.id.tv_user_name);
-        TextView tvUserEmail = findViewById(R.id.tv_user_email);
-        TextView tvUserRole = findViewById(R.id.tv_user_role);
-        Button btnLogout = findViewById(R.id.btn_logout);
-
-        if (tvUserName != null) {
-            tvUserName.setText(sessionManager.getUserName());
-        }
-        if (tvUserEmail != null) {
-            tvUserEmail.setText(sessionManager.getUserEmail());
-        }
-        if (tvUserRole != null) {
-            tvUserRole.setText(sessionManager.getUserRole());
-        }
-
-        if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> {
-                sessionManager.logout();
-                Toast.makeText(HomeActivity.this, "Déconnexion réussie", Toast.LENGTH_SHORT).show();
-                redirectToLogin();
-            });
+        // Default tab on launch: HomeFragment
+        if (savedInstanceState == null) {
+            loadFragment(new HomeFragment());
         }
     }
 
-    private void redirectToLogin() {
-        Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
-        startActivity(intent);
-        finish();
+    private void setupBottomNavigation() {
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            Fragment selectedFragment = null;
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                selectedFragment = new HomeFragment();
+            } else if (itemId == R.id.nav_matches) {
+                selectedFragment = new MyMatchesFragment();
+            } else if (itemId == R.id.nav_agenda) {
+                selectedFragment = new AgendaFragment();
+            } else if (itemId == R.id.nav_favorites) {
+                selectedFragment = new FavoritesFragment();
+            } else if (itemId == R.id.nav_profile) {
+                selectedFragment = new ProfileFragment();
+            }
+
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void loadFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
     }
 }
