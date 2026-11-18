@@ -191,6 +191,12 @@ public class MockDataRepository {
         return terrains;
     }
 
+    public void addTerrain(Terrain terrain) {
+        if (terrain != null) {
+            terrains.add(0, terrain);
+        }
+    }
+
     public Terrain getTerrainById(String id) {
         for (Terrain t : terrains) {
             if (t.getId().equals(id)) {
@@ -225,6 +231,15 @@ public class MockDataRepository {
 
     public void addReservation(Reservation reservation) {
         reservations.add(0, reservation);
+    }
+
+    public void updateReservationStatus(String reservationId, String newStatus) {
+        for (Reservation r : reservations) {
+            if (r.getId().equals(reservationId)) {
+                r.setStatus(newStatus);
+                break;
+            }
+        }
     }
 
     public void addInvitedFriendToReservation(String reservationId, String friendName) {

@@ -63,10 +63,9 @@ public class LoginActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
 
-        // If user is already logged in, redirect straight to HomeActivity
+        // Auto-login role check
         if (sessionManager.isLoggedIn()) {
-            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-            finish();
+            redirectBasedOnRole(sessionManager.getUserRole());
             return;
         }
 
@@ -74,6 +73,17 @@ public class LoginActivity extends AppCompatActivity {
         setupFormattedText();
         setupListeners();
         startEntranceAnimations();
+    }
+
+    private void redirectBasedOnRole(String role) {
+        Intent intent;
+        if ("MANAGER".equalsIgnoreCase(role)) {
+            intent = new Intent(LoginActivity.this, ManagerDashboardActivity.class);
+        } else {
+            intent = new Intent(LoginActivity.this, HomeActivity.class);
+        }
+        startActivity(intent);
+        finish();
     }
 
     private void initViews() {
@@ -151,24 +161,21 @@ public class LoginActivity extends AppCompatActivity {
         setLoadingState(true);
 
         LoginRequest loginRequest = new LoginRequest(email, password);
-        RetrofitClient.getAuthApiService().login(loginRequest).enqueue(new Callback<AuthResponse>() {
+        RetrofitClient.getAuthApiService().login(loginRequest).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
                 setLoadingState(false);
                 if (response.isSuccessful() && response.body() != null) {
                     AuthResponse auth = response.body();
                     long userId = auth.getId() != null ? auth.getId() : 1L;
-                    String name = !TextUtils.isEmpty(auth.getName()) ? auth.getName() : "Joueur";
+                    String name = !TextUtils.isEmpty(auth.getName()) ? auth.getName() : "Utilisateur";
                     String userEmail = !TextUtils.isEmpty(auth.getEmail()) ? auth.getEmail() : email;
                     String role = !TextUtils.isEmpty(auth.getRole()) ? auth.getRole() : "JOUEUR";
 
                     sessionManager.saveUserSession(userId, name, userEmail, role);
                     Toast.makeText(LoginActivity.this, R.string.toast_login_success, Toast.LENGTH_LONG).show();
 
-                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                    startActivity(intent);
-                    applyActivityTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-                    finish();
+                    redirectBasedOnRole(role);
                 } else if (response.code() == 403) {
                     Toast.makeText(LoginActivity.this, "Compte non vérifié. Veuillez saisir votre code OTP.", Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(LoginActivity.this, VerifyEmailActivity.class);
