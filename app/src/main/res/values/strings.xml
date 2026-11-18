@@ -31,6 +31,17 @@
     <string name="already_account_prefix">Déjà un compte ? </string>
     <string name="already_account_action">Se connecter</string>
 
+    <!-- Email Verification Screen -->
+    <string name="verify_email_header_title">Vérifiez votre e-mail</string>
+    <string name="verify_email_header_subtitle">Saisissez le code reçu par e-mail pour activer votre compte.</string>
+    <string name="verify_card_title">Vérifiez votre compte</string>
+    <string name="verify_card_subtitle">Veuillez saisir le code de vérification à 5 chiffres envoyé à votre adresse e-mail pour continuer.</string>
+    <string name="dev_mode_otp">[DEV MODE] Code OTP : 12345</string>
+    <string name="btn_verify">Vérifier</string>
+    <string name="resend_timer">Renvoyer le code dans 00:60</string>
+    <string name="resend_prompt_prefix">Vous n\'avez pas reçu le code ? </string>
+    <string name="resend_action">RENVOYER</string>
+
     <!-- Validation & Messages -->
     <string name="error_empty_fields">Veuillez remplir tous les champs.</string>
     <string name="error_invalid_email">Veuillez entrer une adresse email valide.</string>

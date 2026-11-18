@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_verify_email"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8FAFC"
+    tools:context=".VerifyEmailActivity">
+
+    <!-- Header Navy Container with Curved Bottom -->
+    <View
+        android:id="@+id/view_verify_header_bg"
+        android:layout_width="0dp"
+        android:layout_height="260dp"
+        android:background="@drawable/bg_header_curved_login"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Top Navigation Header Container -->
+    <LinearLayout
+        android:id="@+id/layout_verify_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="24dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_back_button"
+            android:contentDescription="@string/app_name"
+            android:elevation="4dp"
+            android:src="@drawable/ic_arrow_back" />
+
+        <!-- Header Title -->
+        <TextView
+            android:id="@+id/tv_verify_header_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/verify_email_header_title"
+            android:textColor="@color/white"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <!-- Header Subtitle -->
+        <TextView
+            android:id="@+id/tv_verify_header_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/verify_email_header_subtitle"
+            android:textColor="@color/text_muted"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_verify_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="24dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
+
+            <!-- Card/Form Container -->
+            <LinearLayout
+                android:id="@+id/card_verify"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_white"
+                android:elevation="8dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="24dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <!-- Card Title -->
+                <TextView
+                    android:id="@+id/tv_card_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/verify_card_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <!-- Card Subtitle -->
+                <TextView
+                    android:id="@+id/tv_card_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="3dp"
+                    android:text="@string/verify_card_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <!-- 5-digit OTP Code Input Container -->
+                <LinearLayout
+                    android:id="@+id/layout_otp_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/et_otp_1"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="3dp"
+                        android:layout_weight="1"
+                        android:autofillHints="oneTimeCode"
+                        android:background="@drawable/selector_otp_box"
+                        android:gravity="center"
+                        android:hint="-"
+                        android:inputType="number"
+                        android:maxLength="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/et_otp_2"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:layout_weight="1"
+                        android:autofillHints="oneTimeCode"
+                        android:background="@drawable/selector_otp_box"
+                        android:gravity="center"
+                        android:hint="-"
+                        android:inputType="number"
+                        android:maxLength="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/et_otp_3"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:layout_weight="1"
+                        android:autofillHints="oneTimeCode"
+                        android:background="@drawable/selector_otp_box"
+                        android:gravity="center"
+                        android:hint="-"
+                        android:inputType="number"
+                        android:maxLength="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/et_otp_4"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:layout_weight="1"
+                        android:autofillHints="oneTimeCode"
+                        android:background="@drawable/selector_otp_box"
+                        android:gravity="center"
+                        android:hint="-"
+                        android:inputType="number"
+                        android:maxLength="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/et_otp_5"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="2dp"
+                        android:layout_weight="1"
+                        android:autofillHints="oneTimeCode"
+                        android:background="@drawable/selector_otp_box"
+                        android:gravity="center"
+                        android:hint="-"
+                        android:inputType="number"
+                        android:maxLength="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Verify Action Button -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_verify_submit"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:layout_marginTop="28dp"
+                    android:background="@drawable/selector_button_orange"
+                    android:elevation="4dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/btn_verify"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- Sandglass Animated Icon -->
+                <ImageView
+                    android:id="@+id/iv_sandglass"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="24dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/ic_hourglass" />
+
+                <!-- Countdown Timer Text -->
+                <TextView
+                    android:id="@+id/tv_resend_timer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/resend_timer"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <!-- Resend Code Prompt -->
+                <TextView
+                    android:id="@+id/tv_resend_prompt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:textAlignment="center"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

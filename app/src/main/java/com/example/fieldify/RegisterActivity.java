@@ -18,11 +18,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.AuthResponse;
+import com.example.fieldify.network.model.RegisterRequest;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -71,7 +80,6 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void setupFormattedText() {
-        // Formatted bottom link: "Déjà un compte ? " + "Se connecter" (orange + bold)
         String prefix = getString(R.string.already_account_prefix);
         String action = getString(R.string.already_account_action);
         SpannableStringBuilder builder = new SpannableStringBuilder(prefix + action);
@@ -83,13 +91,9 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Toggle password visibility
         ivPasswordToggle.setOnClickListener(v -> togglePasswordVisibility());
-
-        // Submit registration click
         btnRegisterSubmit.setOnClickListener(v -> attemptRegister());
 
-        // Navigate to Login Activity
         tvLoginPrompt.setOnClickListener(v -> {
             Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
             startActivity(intent);
@@ -132,13 +136,44 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, R.string.toast_register_success, Toast.LENGTH_LONG).show();
+        // Show loading state
+        setLoadingState(true);
 
-        // After successful registration, navigate to LoginActivity
-        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-        startActivity(intent);
-        applyActivityTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-        finish();
+        RegisterRequest registerRequest = new RegisterRequest(fullName, email, phone, password);
+        RetrofitClient.getAuthApiService().register(registerRequest).enqueue(new Callback<AuthResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
+                setLoadingState(false);
+                if (response.isSuccessful() || response.code() == 201) {
+                    Toast.makeText(RegisterActivity.this, R.string.toast_register_success, Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(RegisterActivity.this, VerifyEmailActivity.class);
+                    intent.putExtra("USER_EMAIL", email);
+                    startActivity(intent);
+                    applyActivityTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                    finish();
+                } else if (response.code() == 409) {
+                    Toast.makeText(RegisterActivity.this, "Cet e-mail est déjà utilisé.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Erreur lors de l'inscription (" + response.code() + ").", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
+                setLoadingState(false);
+                Toast.makeText(RegisterActivity.this, "Impossible de se connecter au serveur : " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void setLoadingState(boolean isLoading) {
+        btnRegisterSubmit.setEnabled(!isLoading);
+        btnRegisterSubmit.setAlpha(isLoading ? 0.6f : 1.0f);
+        if (isLoading) {
+            btnRegisterSubmit.setText("Inscription en cours...");
+        } else {
+            btnRegisterSubmit.setText(R.string.btn_register);
+        }
     }
 
     private void startEntranceAnimations() {

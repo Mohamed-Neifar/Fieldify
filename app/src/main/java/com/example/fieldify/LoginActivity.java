@@ -18,11 +18,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.AuthResponse;
+import com.example.fieldify.network.model.LoginRequest;
+import com.example.fieldify.utils.SessionManager;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -35,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
     private View cardLogin;
     private View viewHeaderBg;
     private TextView tvLoginTitle;
+    private SessionManager sessionManager;
 
     private boolean isPasswordVisible = false;
 
@@ -49,6 +60,15 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        sessionManager = new SessionManager(this);
+
+        // If user is already logged in, redirect straight to HomeActivity
+        if (sessionManager.isLoggedIn()) {
+            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+            finish();
+            return;
+        }
 
         initViews();
         setupFormattedText();
@@ -69,7 +89,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupFormattedText() {
-        // Formatted bottom link: "Pas encore de compte ? " + "S'inscrire" (orange + bold)
         String prefix = getString(R.string.no_account_prefix);
         String action = getString(R.string.no_account_action);
         SpannableStringBuilder builder = new SpannableStringBuilder(prefix + action);
@@ -81,18 +100,14 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Toggle password visibility
         ivPasswordToggle.setOnClickListener(v -> togglePasswordVisibility());
 
-        // Forgot password click
         tvForgotPassword.setOnClickListener(v ->
             Toast.makeText(LoginActivity.this, R.string.toast_forgot_password, Toast.LENGTH_SHORT).show()
         );
 
-        // Submit login click
         btnLoginSubmit.setOnClickListener(v -> attemptLogin());
 
-        // Navigate to Register Activity
         tvRegisterPrompt.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
@@ -133,7 +148,57 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, R.string.toast_login_success, Toast.LENGTH_LONG).show();
+        setLoadingState(true);
+
+        LoginRequest loginRequest = new LoginRequest(email, password);
+        RetrofitClient.getAuthApiService().login(loginRequest).enqueue(new Callback<AuthResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
+                setLoadingState(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    AuthResponse auth = response.body();
+                    long userId = auth.getId() != null ? auth.getId() : 1L;
+                    String name = !TextUtils.isEmpty(auth.getName()) ? auth.getName() : "Joueur";
+                    String userEmail = !TextUtils.isEmpty(auth.getEmail()) ? auth.getEmail() : email;
+                    String role = !TextUtils.isEmpty(auth.getRole()) ? auth.getRole() : "JOUEUR";
+
+                    sessionManager.saveUserSession(userId, name, userEmail, role);
+                    Toast.makeText(LoginActivity.this, R.string.toast_login_success, Toast.LENGTH_LONG).show();
+
+                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    applyActivityTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                    finish();
+                } else if (response.code() == 403) {
+                    Toast.makeText(LoginActivity.this, "Compte non vérifié. Veuillez saisir votre code OTP.", Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(LoginActivity.this, VerifyEmailActivity.class);
+                    intent.putExtra("USER_EMAIL", email);
+                    startActivity(intent);
+                    applyActivityTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                    finish();
+                } else if (response.code() == 401) {
+                    Toast.makeText(LoginActivity.this, "E-mail ou mot de passe incorrect.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Erreur de connexion (" + response.code() + ").", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
+                setLoadingState(false);
+                Toast.makeText(LoginActivity.this, "Impossible de contacter le serveur : " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void setLoadingState(boolean isLoading) {
+        btnLoginSubmit.setEnabled(!isLoading);
+        btnLoginSubmit.setAlpha(isLoading ? 0.6f : 1.0f);
+        if (isLoading) {
+            btnLoginSubmit.setText("Connexion en cours...");
+        } else {
+            btnLoginSubmit.setText(R.string.btn_login);
+        }
     }
 
     private void startEntranceAnimations() {
