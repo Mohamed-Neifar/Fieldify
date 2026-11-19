@@ -227,14 +227,14 @@ public class MyMatchesFragment extends Fragment {
                     public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                         MockDataRepository.getInstance().addInvitedFriendToReservation(reservation.getId(), friendName);
                         Toast.makeText(requireContext(), friendName + " a été invité !", Toast.LENGTH_SHORT).show();
-                        refreshCurrentTabList();
+                        fetchMyReservations();
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
                         MockDataRepository.getInstance().addInvitedFriendToReservation(reservation.getId(), friendName);
                         Toast.makeText(requireContext(), friendName + " a été invité !", Toast.LENGTH_SHORT).show();
-                        refreshCurrentTabList();
+                        fetchMyReservations();
                     }
                 });
             }
@@ -250,7 +250,13 @@ public class MyMatchesFragment extends Fragment {
         r.setDate(dto.getDate() != null ? dto.getDate() : "2026-11-24");
         r.setTimeSlot(dto.getTimeSlot() != null ? dto.getTimeSlot() : "18:00 - 19:30");
         r.setStatus(dto.getStatus());
-        r.setInvitedFriends(dto.getInvitedFriends() != null ? dto.getInvitedFriends() : new ArrayList<>());
+
+        List<String> friends = dto.getInvitedFriends();
+        if (friends == null || friends.isEmpty()) {
+            friends = dto.getInvitedEmails();
+        }
+        r.setInvitedFriends(friends != null ? friends : new ArrayList<>());
+
         if (dto.getTerrain() != null) {
             r.setTerrain(HomeFragment.mapDtoToTerrain(dto.getTerrain()));
         } else {

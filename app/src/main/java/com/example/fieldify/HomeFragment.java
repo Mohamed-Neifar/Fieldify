@@ -77,36 +77,53 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupCategories() {
-        // Fetch real sports from API
         RetrofitClient.getFieldifyApiService(requireContext()).getSports().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<SportDto>> call, @NonNull Response<List<SportDto>> response) {
                 List<String> categories = new ArrayList<>();
-                categories.add("Tous");
+                categories.add("🌐 Tous");
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     for (SportDto sport : response.body()) {
                         if (sport.getName() != null && !sport.getName().isEmpty()) {
-                            categories.add(sport.getName());
+                            String icon = sport.getIcon() != null && !sport.getIcon().trim().isEmpty()
+                                    ? sport.getIcon()
+                                    : getEmojiForSport(sport.getName());
+                            categories.add(icon + " " + sport.getName());
                         }
                     }
                 } else {
-                    categories.addAll(Arrays.asList("Football", "Padel", "Tennis", "Basket-ball", "Volley-ball", "Golf", "Piscine privée"));
+                    categories.addAll(getDefaultCategoriesWithEmojis());
                 }
                 bindCategories(categories);
             }
 
             @Override
             public void onFailure(@NonNull Call<List<SportDto>> call, @NonNull Throwable t) {
-                List<String> categories = Arrays.asList("Tous", "Football", "Padel", "Tennis", "Basket-ball", "Volley-ball", "Golf", "Piscine privée");
-                bindCategories(categories);
+                bindCategories(getDefaultCategoriesWithEmojis());
             }
         });
     }
 
+    private List<String> getDefaultCategoriesWithEmojis() {
+        return Arrays.asList("⚽ Football", "🎾 Padel", "🎾 Tennis", "🏀 Basket-ball", "🏐 Volley-ball", "⛳ Golf", "🏊 Piscine privée");
+    }
+
+    public static String getEmojiForSport(String name) {
+        if (name == null) return "⚽";
+        String lower = name.toLowerCase();
+        if (lower.contains("padel")) return "🎾";
+        if (lower.contains("tennis")) return "🎾";
+        if (lower.contains("basket")) return "🏀";
+        if (lower.contains("volley")) return "🏐";
+        if (lower.contains("golf")) return "⛳";
+        if (lower.contains("piscine") || lower.contains("swimming")) return "🏊";
+        return "⚽";
+    }
+
     private void bindCategories(List<String> categories) {
         if (!isAdded()) return;
-        CategoryAdapter categoryAdapter = new CategoryAdapter(requireContext(), categories, category -> {
-            selectedCategory = category;
+        CategoryAdapter categoryAdapter = new CategoryAdapter(requireContext(), categories, cleanCategory -> {
+            selectedCategory = cleanCategory;
             refreshTerrainsList();
         });
         rvCategories.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -155,7 +172,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void refreshTerrainsList() {
-        String sportQuery = "Tous".equalsIgnoreCase(selectedCategory) ? null : selectedCategory;
+        String sportQuery = ("Tous".equalsIgnoreCase(selectedCategory) || "🌐 Tous".equalsIgnoreCase(selectedCategory)) ? null : selectedCategory;
         RetrofitClient.getFieldifyApiService(requireContext()).getTerrains(
                 sportQuery, null, maxPriceFilter > 0 ? maxPriceFilter : null, searchQuery
         ).enqueue(new Callback<>() {

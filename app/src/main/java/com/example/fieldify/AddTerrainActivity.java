@@ -28,7 +28,8 @@ import com.example.fieldify.network.model.TerrainDto;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -133,19 +134,14 @@ public class AddTerrainActivity extends AppCompatActivity {
 
     private void uploadPhotosAndPublish() {
         List<MultipartBody.Part> parts = new ArrayList<>();
-        ContentResolver contentResolver = getContentResolver();
 
         for (int i = 0; i < selectedPhotoUris.size(); i++) {
             Uri uri = selectedPhotoUris.get(i);
             try {
-                InputStream inputStream = contentResolver.openInputStream(uri);
-                if (inputStream != null) {
-                    byte[] bytes = getBytesFromInputStream(inputStream);
-                    inputStream.close();
-                    RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), bytes);
-                    MultipartBody.Part body = MultipartBody.Part.createFormData("files", "photo_" + i + ".jpg", requestFile);
-                    parts.add(body);
-                }
+                File file = getFileFromUri(uri, "photo_" + System.currentTimeMillis() + "_" + i + ".jpg");
+                RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
+                MultipartBody.Part body = MultipartBody.Part.createFormData("files", file.getName(), requestFile);
+                parts.add(body);
             } catch (Exception ignored) {
             }
         }
@@ -172,15 +168,20 @@ public class AddTerrainActivity extends AppCompatActivity {
         });
     }
 
-    private byte[] getBytesFromInputStream(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-        int bufferSize = 1024;
-        byte[] buffer = new byte[bufferSize];
-        int len;
-        while ((len = inputStream.read(buffer)) != -1) {
-            byteBuffer.write(buffer, 0, len);
+    private File getFileFromUri(Uri uri, String fileName) throws IOException {
+        File tempFile = new File(getCacheDir(), fileName);
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
+             FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+            if (inputStream != null) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, read);
+                }
+                outputStream.flush();
+            }
         }
-        return byteBuffer.toByteArray();
+        return tempFile;
     }
 
     private void sendCreateTerrainRequest(List<String> imageUrls) {
@@ -267,7 +268,7 @@ public class AddTerrainActivity extends AppCompatActivity {
             localTerrain.setImageUrls(imageUrls);
         }
         MockDataRepository.getInstance().addTerrain(localTerrain);
-        Toast.makeText(this, "Espace sportif " + title + " publié localement !", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Espace sportif " + title + " publié !", Toast.LENGTH_LONG).show();
         finish();
     }
 }

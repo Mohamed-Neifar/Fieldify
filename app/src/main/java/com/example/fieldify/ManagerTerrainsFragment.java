@@ -71,13 +71,13 @@ public class ManagerTerrainsFragment extends Fragment {
                     }
                     bindTerrains(list);
                 } else {
-                    bindTerrains(MockDataRepository.getInstance().getTerrains());
+                    bindTerrains(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
-                bindTerrains(MockDataRepository.getInstance().getTerrains());
+                bindTerrains(new ArrayList<>());
             }
         });
     }

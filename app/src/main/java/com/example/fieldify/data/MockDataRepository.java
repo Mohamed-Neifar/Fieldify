@@ -147,44 +147,6 @@ public class MockDataRepository {
         terrains.add(t5);
         terrains.add(t6);
         terrains.add(t7);
-
-        // Initial Mock Reservations
-        reservations.add(new Reservation(
-                "r1",
-                t1,
-                "2026-11-24",
-                "18:00 - 19:30",
-                "Confirmé",
-                new ArrayList<>(Arrays.asList("Ahmed Ben Ali", "Youssef Mahfoudh", "Karim Siala"))
-        ));
-
-        reservations.add(new Reservation(
-                "r2",
-                t2,
-                "2026-11-24",
-                "19:30 - 21:00",
-                "En attente",
-                new ArrayList<>(Arrays.asList("Sami Louati", "Marwen Karray"))
-        ));
-
-        // Initial Mock Invitations Received
-        invitations.add(new Invitation(
-                "i1",
-                "Yassine Triki",
-                t2,
-                "2026-11-25",
-                "20:00 - 21:30",
-                "En attente"
-        ));
-
-        invitations.add(new Invitation(
-                "i2",
-                "Amine Hentati",
-                t3,
-                "2026-11-26",
-                "17:00 - 18:30",
-                "En attente"
-        ));
     }
 
     public List<Terrain> getTerrains() {
@@ -269,7 +231,6 @@ public class MockDataRepository {
         for (Invitation inv : invitations) {
             if (inv.getId().equals(invitationId)) {
                 inv.setStatus("Acceptée");
-                // Add to confirmed reservations
                 reservations.add(0, new Reservation(
                         "r_" + System.currentTimeMillis(),
                         inv.getTerrain(),

@@ -7,6 +7,7 @@ public class TerrainDto {
     private String name;
     private String category;
     private String sportName;
+    private SportDto sport;
     private String city;
     private String zone;
     private String address;
@@ -37,10 +38,16 @@ public class TerrainDto {
     }
 
     public String getCategory() {
-        if (category != null && !category.isEmpty()) {
+        if (category != null && !category.trim().isEmpty()) {
             return category;
         }
-        return sportName != null ? sportName : "Football";
+        if (sportName != null && !sportName.trim().isEmpty()) {
+            return sportName;
+        }
+        if (sport != null && sport.getName() != null && !sport.getName().trim().isEmpty()) {
+            return sport.getName();
+        }
+        return "Football";
     }
 
     public void setCategory(String category) {
@@ -55,8 +62,16 @@ public class TerrainDto {
         this.sportName = sportName;
     }
 
+    public SportDto getSport() {
+        return sport;
+    }
+
+    public void setSport(SportDto sport) {
+        this.sport = sport;
+    }
+
     public String getCity() {
-        if (city != null && !city.isEmpty()) {
+        if (city != null && !city.trim().isEmpty()) {
             return city;
         }
         return zone != null ? zone : "Sfax, Tunisie";
@@ -67,7 +82,7 @@ public class TerrainDto {
     }
 
     public String getZone() {
-        if (zone != null && !zone.isEmpty()) {
+        if (zone != null && !zone.trim().isEmpty()) {
             return zone;
         }
         return city != null ? city : "Sfax, Tunisie";

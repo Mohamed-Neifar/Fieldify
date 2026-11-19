@@ -17,7 +17,7 @@ import java.util.List;
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder> {
 
     public interface OnCategoryClickListener {
-        void onCategoryClick(String category);
+        void onCategoryClick(String cleanCategory);
     }
 
     private final Context context;
@@ -43,7 +43,9 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         String category = categories.get(position);
         holder.tvName.setText(category);
 
-        boolean isSelected = category.equalsIgnoreCase(selectedCategory);
+        String cleanCategory = getCleanCategory(category);
+        boolean isSelected = cleanCategory.equalsIgnoreCase(getCleanCategory(selectedCategory));
+
         if (isSelected) {
             holder.tvName.setBackgroundResource(R.drawable.bg_chip_category_active);
             holder.tvName.setTextColor(ContextCompat.getColor(context, R.color.white));
@@ -56,9 +58,25 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
             selectedCategory = category;
             notifyDataSetChanged();
             if (listener != null) {
-                listener.onCategoryClick(category);
+                listener.onCategoryClick(cleanCategory);
             }
         });
+    }
+
+    public static String getCleanCategory(String formatted) {
+        if (formatted == null) return "Tous";
+        String clean = formatted.trim();
+        if (clean.contains(" ")) {
+            String[] parts = clean.split(" ");
+            if (parts.length > 1) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 1; i < parts.length; i++) {
+                    sb.append(parts[i]).append(i == parts.length - 1 ? "" : " ");
+                }
+                return sb.toString().trim();
+            }
+        }
+        return clean;
     }
 
     @Override

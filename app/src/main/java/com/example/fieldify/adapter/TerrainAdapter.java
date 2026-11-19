@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.fieldify.R;
+import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 
@@ -71,11 +72,17 @@ public class TerrainAdapter extends RecyclerView.Adapter<TerrainAdapter.TerrainV
                     .placeholder(R.drawable.img_welcome_sports)
                     .error(R.drawable.img_welcome_sports)
                     .into(holder.ivImage);
+        } else {
+            holder.ivImage.setImageResource(R.drawable.img_welcome_sports);
         }
 
         holder.btnFavorite.setImageResource(terrain.isFavorite() ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
 
         holder.btnFavorite.setOnClickListener(v -> {
+            boolean newFavState = !terrain.isFavorite();
+            terrain.setFavorite(newFavState);
+            MockDataRepository.getInstance().toggleFavorite(terrain.getId());
+            holder.btnFavorite.setImageResource(newFavState ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
             if (listener != null) {
                 listener.onFavoriteClick(terrain);
             }

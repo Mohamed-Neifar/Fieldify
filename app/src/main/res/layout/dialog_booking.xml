@@ -114,19 +114,80 @@
         android:layout_marginTop="8dp"
         android:autofillHints="name"
         android:background="@drawable/selector_input_field"
-        android:hint="Ex: Ahmed, Youssef"
+        android:hint="Ex: ahmed, youssef@gmail.com"
         android:inputType="textPersonName"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
         android:textColor="@color/text_primary"
         android:textSize="14sp" />
 
+    <!-- Mode de Paiement Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Mode de paiement :"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/rg_payment_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/rb_pay_on_site"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Paiement sur place (Espèces)"
+            android:textColor="@color/text_primary" />
+
+        <RadioButton
+            android:id="@+id/rb_pay_online"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Carte bancaire / D17 (Paiement en ligne simulé)"
+            android:textColor="@color/text_primary" />
+    </RadioGroup>
+
+    <!-- Total Price Summary Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="#F8FAFC"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Montant total :"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_total_price_summary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="70.0 DT"
+            android:textColor="@color/orange_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <!-- Confirm Booking Button -->
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_confirm_booking"
         android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="20dp"
         android:background="@drawable/selector_button_orange"
         android:text="Confirmer la réservation"
         android:textAllCaps="false"
