@@ -16,15 +16,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fieldify.adapter.TerrainAdapter;
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.TerrainDto;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ManagerTerrainsFragment extends Fragment {
 
     private RecyclerView rvTerrains;
     private TextView tvEmpty;
-    private FloatingActionButton fabAdd;
     private TerrainAdapter adapter;
 
     @Nullable
@@ -34,7 +40,7 @@ public class ManagerTerrainsFragment extends Fragment {
 
         rvTerrains = view.findViewById(R.id.rv_manager_terrains);
         tvEmpty = view.findViewById(R.id.tv_empty_manager_terrains);
-        fabAdd = view.findViewById(R.id.fab_add_terrain);
+        FloatingActionButton fabAdd = view.findViewById(R.id.fab_add_terrain);
 
         rvTerrains.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -55,7 +61,29 @@ public class ManagerTerrainsFragment extends Fragment {
     }
 
     private void refreshTerrains() {
-        List<Terrain> terrains = MockDataRepository.getInstance().getTerrains();
+        RetrofitClient.getFieldifyApiService(requireContext()).getManagerTerrains().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<TerrainDto>> call, @NonNull Response<List<TerrainDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Terrain> list = new ArrayList<>();
+                    for (TerrainDto dto : response.body()) {
+                        list.add(HomeFragment.mapDtoToTerrain(dto));
+                    }
+                    bindTerrains(list);
+                } else {
+                    bindTerrains(MockDataRepository.getInstance().getTerrains());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
+                bindTerrains(MockDataRepository.getInstance().getTerrains());
+            }
+        });
+    }
+
+    private void bindTerrains(List<Terrain> terrains) {
+        if (!isAdded()) return;
 
         if (adapter == null) {
             adapter = new TerrainAdapter(requireContext(), terrains, new TerrainAdapter.OnTerrainClickListener() {

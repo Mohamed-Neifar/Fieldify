@@ -21,11 +21,19 @@ import com.example.fieldify.adapter.CategoryAdapter;
 import com.example.fieldify.adapter.TerrainAdapter;
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.SportDto;
+import com.example.fieldify.network.model.TerrainDto;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.slider.Slider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
 
@@ -36,7 +44,6 @@ public class HomeFragment extends Fragment {
     private TextView tvEmpty;
 
     private TerrainAdapter terrainAdapter;
-    private CategoryAdapter categoryAdapter;
 
     private String selectedCategory = "Tous";
     private String searchQuery = "";
@@ -70,12 +77,38 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupCategories() {
-        List<String> categories = Arrays.asList("Tous", "Football", "Padel", "Tennis", "Basket-ball", "Volley-ball", "Golf", "Piscine privée");
-        categoryAdapter = new CategoryAdapter(requireContext(), categories, category -> {
+        // Fetch real sports from API
+        RetrofitClient.getFieldifyApiService(requireContext()).getSports().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<SportDto>> call, @NonNull Response<List<SportDto>> response) {
+                List<String> categories = new ArrayList<>();
+                categories.add("Tous");
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    for (SportDto sport : response.body()) {
+                        if (sport.getName() != null && !sport.getName().isEmpty()) {
+                            categories.add(sport.getName());
+                        }
+                    }
+                } else {
+                    categories.addAll(Arrays.asList("Football", "Padel", "Tennis", "Basket-ball", "Volley-ball", "Golf", "Piscine privée"));
+                }
+                bindCategories(categories);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<SportDto>> call, @NonNull Throwable t) {
+                List<String> categories = Arrays.asList("Tous", "Football", "Padel", "Tennis", "Basket-ball", "Volley-ball", "Golf", "Piscine privée");
+                bindCategories(categories);
+            }
+        });
+    }
+
+    private void bindCategories(List<String> categories) {
+        if (!isAdded()) return;
+        CategoryAdapter categoryAdapter = new CategoryAdapter(requireContext(), categories, category -> {
             selectedCategory = category;
             refreshTerrainsList();
         });
-
         rvCategories.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         rvCategories.setAdapter(categoryAdapter);
     }
@@ -122,14 +155,58 @@ public class HomeFragment extends Fragment {
     }
 
     private void refreshTerrainsList() {
+        String sportQuery = "Tous".equalsIgnoreCase(selectedCategory) ? null : selectedCategory;
+        RetrofitClient.getFieldifyApiService(requireContext()).getTerrains(
+                sportQuery, null, maxPriceFilter > 0 ? maxPriceFilter : null, searchQuery
+        ).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<TerrainDto>> call, @NonNull Response<List<TerrainDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Terrain> apiTerrains = new ArrayList<>();
+                    for (TerrainDto dto : response.body()) {
+                        apiTerrains.add(mapDtoToTerrain(dto));
+                    }
+                    if (terrainAdapter != null) {
+                        terrainAdapter.updateData(apiTerrains);
+                    }
+                    if (tvEmpty != null) {
+                        tvEmpty.setVisibility(apiTerrains.isEmpty() ? View.VISIBLE : View.GONE);
+                    }
+                } else {
+                    fallbackToMockTerrains();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
+                fallbackToMockTerrains();
+            }
+        });
+    }
+
+    private void fallbackToMockTerrains() {
         List<Terrain> filtered = MockDataRepository.getInstance().filterTerrains(selectedCategory, searchQuery, maxPriceFilter, null);
         if (terrainAdapter != null) {
             terrainAdapter.updateData(filtered);
         }
-
         if (tvEmpty != null) {
             tvEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
         }
+    }
+
+    public static Terrain mapDtoToTerrain(TerrainDto dto) {
+        Terrain t = new Terrain();
+        t.setId(dto.getId() != null ? String.valueOf(dto.getId()) : "t_" + System.currentTimeMillis());
+        t.setName(dto.getName() != null ? dto.getName() : "Espace Sportif");
+        t.setCategory(dto.getCategory());
+        t.setZone(dto.getZone());
+        t.setAddress(dto.getAddress() != null ? dto.getAddress() : dto.getZone());
+        t.setPricePerHour(dto.getPricePerHour());
+        t.setRating(dto.getRating());
+        t.setDescription(dto.getDescription() != null ? dto.getDescription() : "");
+        t.setEquipments(dto.getEquipments() != null ? dto.getEquipments() : new ArrayList<>());
+        t.setImageUrls(dto.getImageUrls());
+        return t;
     }
 
     private void showFilterBottomSheet() {

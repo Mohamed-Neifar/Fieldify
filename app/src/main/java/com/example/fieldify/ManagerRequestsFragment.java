@@ -16,8 +16,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fieldify.adapter.ManagerRequestAdapter;
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Reservation;
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.ReservationDto;
+import com.example.fieldify.network.model.UpdateReservationStatusRequest;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ManagerRequestsFragment extends Fragment {
 
@@ -45,31 +53,73 @@ public class ManagerRequestsFragment extends Fragment {
     }
 
     private void refreshList() {
-        List<Reservation> reservations = MockDataRepository.getInstance().getReservations();
+        RetrofitClient.getFieldifyApiService(requireContext()).getManagerReservations().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ReservationDto>> call, @NonNull Response<List<ReservationDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Reservation> list = new ArrayList<>();
+                    for (ReservationDto dto : response.body()) {
+                        list.add(MyMatchesFragment.mapReservationDto(dto));
+                    }
+                    bindRequests(list);
+                } else {
+                    bindRequests(MockDataRepository.getInstance().getReservations());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<ReservationDto>> call, @NonNull Throwable t) {
+                bindRequests(MockDataRepository.getInstance().getReservations());
+            }
+        });
+    }
+
+    private void bindRequests(List<Reservation> list) {
+        if (!isAdded()) return;
 
         if (adapter == null) {
-            adapter = new ManagerRequestAdapter(requireContext(), reservations, new ManagerRequestAdapter.OnRequestActionListener() {
+            adapter = new ManagerRequestAdapter(requireContext(), list, new ManagerRequestAdapter.OnRequestActionListener() {
                 @Override
                 public void onAccept(Reservation reservation) {
-                    MockDataRepository.getInstance().updateReservationStatus(reservation.getId(), "Confirmé");
-                    Toast.makeText(requireContext(), "Réservation acceptée !", Toast.LENGTH_SHORT).show();
-                    refreshList();
+                    updateStatusOnServer(reservation, "CONFIRMED", "Réservation acceptée !");
                 }
 
                 @Override
                 public void onRefuse(Reservation reservation) {
-                    MockDataRepository.getInstance().updateReservationStatus(reservation.getId(), "Refusé");
-                    Toast.makeText(requireContext(), "Réservation refusée.", Toast.LENGTH_SHORT).show();
-                    refreshList();
+                    updateStatusOnServer(reservation, "REJECTED", "Réservation refusée.");
                 }
             });
             rvRequests.setAdapter(adapter);
         } else {
-            adapter.updateData(reservations);
+            adapter.updateData(list);
         }
 
         if (tvEmpty != null) {
-            tvEmpty.setVisibility(reservations.isEmpty() ? View.VISIBLE : View.GONE);
+            tvEmpty.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
         }
+    }
+
+    private void updateStatusOnServer(Reservation reservation, String status, String successMessage) {
+        long resId = 1L;
+        try {
+            resId = Long.parseLong(reservation.getId());
+        } catch (Exception ignored) {
+        }
+
+        RetrofitClient.getFieldifyApiService(requireContext()).updateReservationStatus(resId, new UpdateReservationStatusRequest(status)).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                MockDataRepository.getInstance().updateReservationStatus(reservation.getId(), "CONFIRMED".equalsIgnoreCase(status) ? "Confirmé" : "Refusé");
+                Toast.makeText(requireContext(), successMessage, Toast.LENGTH_SHORT).show();
+                refreshList();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                MockDataRepository.getInstance().updateReservationStatus(reservation.getId(), "CONFIRMED".equalsIgnoreCase(status) ? "Confirmé" : "Refusé");
+                Toast.makeText(requireContext(), successMessage, Toast.LENGTH_SHORT).show();
+                refreshList();
+            }
+        });
     }
 }

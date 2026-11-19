@@ -1,6 +1,7 @@
 package com.example.fieldify.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,18 +10,24 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.fieldify.R;
+import com.example.fieldify.network.RetrofitClient;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.SliderViewHolder> {
 
     private final Context context;
-    private final List<Integer> imageResIds;
+    private final List<Object> imageSources;
 
-    public ImageSliderAdapter(Context context, List<Integer> imageResIds) {
+    public ImageSliderAdapter(Context context, List<?> sources) {
         this.context = context;
-        this.imageResIds = imageResIds;
+        this.imageSources = new ArrayList<>();
+        if (sources != null) {
+            this.imageSources.addAll(sources);
+        }
     }
 
     @NonNull
@@ -32,13 +39,30 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull SliderViewHolder holder, int position) {
-        int resId = imageResIds.get(position);
-        holder.imageView.setImageResource(resId);
+        Object item = imageSources.get(position);
+        if (item instanceof String) {
+            String url = (String) item;
+            if (!TextUtils.isEmpty(url)) {
+                String fullUrl = RetrofitClient.getFullImageUrl(url);
+                Glide.with(context)
+                        .load(fullUrl)
+                        .placeholder(R.drawable.img_welcome_sports)
+                        .error(R.drawable.img_welcome_sports)
+                        .into(holder.imageView);
+            }
+        } else if (item instanceof Integer) {
+            int resId = (Integer) item;
+            Glide.with(context)
+                    .load(resId)
+                    .placeholder(R.drawable.img_welcome_sports)
+                    .error(R.drawable.img_welcome_sports)
+                    .into(holder.imageView);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return imageResIds != null ? imageResIds.size() : 0;
+        return imageSources != null ? imageSources.size() : 0;
     }
 
     static class SliderViewHolder extends RecyclerView.ViewHolder {

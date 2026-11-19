@@ -1,5 +1,6 @@
 package com.example.fieldify;
 
+import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -12,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -20,12 +22,25 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.CreateTerrainRequest;
+import com.example.fieldify.network.model.TerrainDto;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AddTerrainActivity extends AppCompatActivity {
 
@@ -93,20 +108,87 @@ public class AddTerrainActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnPickPhotos.setOnClickListener(v -> photoPickerLauncher.launch("image/*"));
-        btnPublish.setOnClickListener(v -> publishTerrain());
+        btnPublish.setOnClickListener(v -> attemptPublish());
     }
 
-    private void publishTerrain() {
+    private void attemptPublish() {
         String title = etTitle.getText() != null ? etTitle.getText().toString().trim() : "";
         String zone = etZone.getText() != null ? etZone.getText().toString().trim() : "";
-        String address = etAddress.getText() != null ? etAddress.getText().toString().trim() : "";
         String priceStr = etPrice.getText() != null ? etPrice.getText().toString().trim() : "";
-        String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(title) || TextUtils.isEmpty(zone) || TextUtils.isEmpty(priceStr)) {
             Toast.makeText(this, "Veuillez remplir tous les champs obligatoires (Titre, Zone, Prix).", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        btnPublish.setEnabled(false);
+        btnPublish.setText("Publication en cours...");
+
+        if (!selectedPhotoUris.isEmpty()) {
+            uploadPhotosAndPublish();
+        } else {
+            sendCreateTerrainRequest(new ArrayList<>());
+        }
+    }
+
+    private void uploadPhotosAndPublish() {
+        List<MultipartBody.Part> parts = new ArrayList<>();
+        ContentResolver contentResolver = getContentResolver();
+
+        for (int i = 0; i < selectedPhotoUris.size(); i++) {
+            Uri uri = selectedPhotoUris.get(i);
+            try {
+                InputStream inputStream = contentResolver.openInputStream(uri);
+                if (inputStream != null) {
+                    byte[] bytes = getBytesFromInputStream(inputStream);
+                    inputStream.close();
+                    RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), bytes);
+                    MultipartBody.Part body = MultipartBody.Part.createFormData("files", "photo_" + i + ".jpg", requestFile);
+                    parts.add(body);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (parts.isEmpty()) {
+            sendCreateTerrainRequest(new ArrayList<>());
+            return;
+        }
+
+        RetrofitClient.getFieldifyApiService(this).uploadFiles(parts).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<String>> call, @NonNull Response<List<String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    sendCreateTerrainRequest(response.body());
+                } else {
+                    sendCreateTerrainRequest(new ArrayList<>());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<String>> call, @NonNull Throwable t) {
+                sendCreateTerrainRequest(new ArrayList<>());
+            }
+        });
+    }
+
+    private byte[] getBytesFromInputStream(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+        int len;
+        while ((len = inputStream.read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+        return byteBuffer.toByteArray();
+    }
+
+    private void sendCreateTerrainRequest(List<String> imageUrls) {
+        String title = etTitle.getText() != null ? etTitle.getText().toString().trim() : "";
+        String zone = etZone.getText() != null ? etZone.getText().toString().trim() : "";
+        String address = etAddress.getText() != null ? etAddress.getText().toString().trim() : "";
+        String priceStr = etPrice.getText() != null ? etPrice.getText().toString().trim() : "";
+        String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
 
         double price = 50.0;
         try {
@@ -129,38 +211,63 @@ public class AddTerrainActivity extends AppCompatActivity {
             selectedEquipments = Arrays.asList("Parking", "Vestiaires", "Éclairage LED");
         }
 
-        List<Integer> imageResIds = Arrays.asList(R.drawable.img_welcome_sports);
-        if ("Football".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.footbalfieldimg1, R.drawable.footbalfieldimg2);
-        } else if ("Padel".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.padelfield);
-        } else if ("Tennis".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.tennisfield);
-        } else if ("Basket-ball".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.basketballfield);
-        } else if ("Volley-ball".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.volleyballfiled);
-        } else if ("Golf".equalsIgnoreCase(selectedCategory)) {
-            imageResIds = Arrays.asList(R.drawable.golffield);
-        }
+        CreateTerrainRequest request = new CreateTerrainRequest(
+                selectedCategory,
+                title,
+                TextUtils.isEmpty(description) ? "Nouveau terrain de haut niveau à " + zone : description,
+                TextUtils.isEmpty(address) ? zone : address,
+                zone,
+                price,
+                selectedEquipments,
+                imageUrls
+        );
 
-        Terrain newTerrain = new Terrain(
+        final double finalPrice = price;
+        final List<String> finalEquipments = selectedEquipments;
+
+        RetrofitClient.getFieldifyApiService(this).createManagerTerrain(request).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<TerrainDto> call, @NonNull Response<TerrainDto> response) {
+                btnPublish.setEnabled(true);
+                btnPublish.setText("Publier le terrain");
+                if (response.isSuccessful() && response.body() != null) {
+                    Terrain newTerrain = HomeFragment.mapDtoToTerrain(response.body());
+                    MockDataRepository.getInstance().addTerrain(newTerrain);
+                    Toast.makeText(AddTerrainActivity.this, "Espace sportif " + title + " publié avec succès !", Toast.LENGTH_LONG).show();
+                    finish();
+                } else {
+                    fallbackLocalPublish(title, selectedCategory, zone, address, finalPrice, description, finalEquipments, imageUrls);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<TerrainDto> call, @NonNull Throwable t) {
+                btnPublish.setEnabled(true);
+                btnPublish.setText("Publier le terrain");
+                fallbackLocalPublish(title, selectedCategory, zone, address, finalPrice, description, finalEquipments, imageUrls);
+            }
+        });
+    }
+
+    private void fallbackLocalPublish(String title, String category, String zone, String address, double price, String description, List<String> equipments, List<String> imageUrls) {
+        Terrain localTerrain = new Terrain(
                 "t_" + System.currentTimeMillis(),
                 title,
-                selectedCategory,
+                category,
                 zone,
                 TextUtils.isEmpty(address) ? zone : address,
                 price,
                 4.9,
-                TextUtils.isEmpty(description) ? "Nouveau terrain de haut niveau à " + zone : description,
-                selectedEquipments,
-                imageResIds,
+                description,
+                equipments,
+                Arrays.asList(R.drawable.img_welcome_sports),
                 false
         );
-
-        MockDataRepository.getInstance().addTerrain(newTerrain);
-
-        Toast.makeText(this, "Espace sportif " + title + " publié avec succès !", Toast.LENGTH_LONG).show();
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            localTerrain.setImageUrls(imageUrls);
+        }
+        MockDataRepository.getInstance().addTerrain(localTerrain);
+        Toast.makeText(this, "Espace sportif " + title + " publié localement !", Toast.LENGTH_LONG).show();
         finish();
     }
 }

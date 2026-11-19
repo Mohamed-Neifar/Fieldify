@@ -1,6 +1,7 @@
 package com.example.fieldify.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +12,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.fieldify.R;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.network.RetrofitClient;
 
 import java.util.List;
 
@@ -55,8 +58,19 @@ public class TerrainAdapter extends RecyclerView.Adapter<TerrainAdapter.TerrainV
         holder.tvCategoryBadge.setText(terrain.getCategory());
         holder.tvPrice.setText((int) terrain.getPricePerHour() + " DT / h");
 
-        if (terrain.getPrimaryImageResId() != 0) {
-            holder.ivImage.setImageResource(terrain.getPrimaryImageResId());
+        if (terrain.getImageUrls() != null && !terrain.getImageUrls().isEmpty() && !TextUtils.isEmpty(terrain.getImageUrls().get(0))) {
+            String fullUrl = RetrofitClient.getFullImageUrl(terrain.getImageUrls().get(0));
+            Glide.with(context)
+                    .load(fullUrl)
+                    .placeholder(R.drawable.img_welcome_sports)
+                    .error(R.drawable.img_welcome_sports)
+                    .into(holder.ivImage);
+        } else if (terrain.getPrimaryImageResId() != 0) {
+            Glide.with(context)
+                    .load(terrain.getPrimaryImageResId())
+                    .placeholder(R.drawable.img_welcome_sports)
+                    .error(R.drawable.img_welcome_sports)
+                    .into(holder.ivImage);
         }
 
         holder.btnFavorite.setImageResource(terrain.isFavorite() ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);

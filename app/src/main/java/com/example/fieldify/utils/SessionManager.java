@@ -10,21 +10,27 @@ public class SessionManager {
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "user_email";
+    private static final String KEY_USER_PHONE = "user_phone";
     private static final String KEY_USER_ROLE = "user_role";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
 
     public SessionManager(Context context) {
-        pref = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        pref = context.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = pref.edit();
     }
 
     public void saveUserSession(long id, String name, String email, String role) {
+        saveUserSession(id, name, email, "", role);
+    }
+
+    public void saveUserSession(long id, String name, String email, String phone, String role) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.putLong(KEY_USER_ID, id);
         editor.putString(KEY_USER_NAME, name != null ? name : "");
         editor.putString(KEY_USER_EMAIL, email != null ? email : "");
+        editor.putString(KEY_USER_PHONE, phone != null ? phone : "");
         editor.putString(KEY_USER_ROLE, role != null ? role : "JOUEUR");
         editor.apply();
     }
@@ -43,6 +49,10 @@ public class SessionManager {
 
     public String getUserEmail() {
         return pref.getString(KEY_USER_EMAIL, "");
+    }
+
+    public String getUserPhone() {
+        return pref.getString(KEY_USER_PHONE, "");
     }
 
     public String getUserRole() {

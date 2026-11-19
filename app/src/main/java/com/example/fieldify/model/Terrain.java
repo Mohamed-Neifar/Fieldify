@@ -13,6 +13,7 @@ public class Terrain {
     private String description;
     private List<String> equipments;
     private List<Integer> imageResIds;
+    private List<String> imageUrls;
     private boolean isFavorite;
 
     public Terrain() {
@@ -110,6 +111,14 @@ public class Terrain {
 
     public void setImageResIds(List<Integer> imageResIds) {
         this.imageResIds = imageResIds;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
 
     public boolean isFavorite() {
