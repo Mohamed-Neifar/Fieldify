@@ -16,10 +16,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fieldify.adapter.TerrainAdapter;
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.network.RetrofitClient;
+import com.example.fieldify.network.model.TerrainDto;
 import com.example.fieldify.utils.SessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class FavoritesFragment extends Fragment {
 
@@ -53,16 +59,47 @@ public class FavoritesFragment extends Fragment {
     }
 
     private void refreshFavoritesList() {
+        RetrofitClient.getFieldifyApiService(requireContext()).getTerrains(null, null, null, null).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<TerrainDto>> call, @NonNull Response<List<TerrainDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Terrain> favorites = new ArrayList<>();
+                    for (TerrainDto dto : response.body()) {
+                        Terrain t = HomeFragment.mapDtoToTerrain(dto);
+                        if (sessionManager.isFavoriteTerrain(t.getId())) {
+                            t.setFavorite(true);
+                            favorites.add(t);
+                        }
+                    }
+                    bindFavorites(favorites);
+                } else {
+                    fallbackLocalFavorites();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
+                fallbackLocalFavorites();
+            }
+        });
+    }
+
+    private void fallbackLocalFavorites() {
         List<Terrain> allTerrains = MockDataRepository.getInstance().getTerrains();
         List<Terrain> favorites = new ArrayList<>();
 
         for (Terrain t : allTerrains) {
-            boolean isFav = sessionManager.isTerrainFavorite(t.getId());
+            boolean isFav = sessionManager.isFavoriteTerrain(t.getId());
             t.setFavorite(isFav);
             if (isFav) {
                 favorites.add(t);
             }
         }
+        bindFavorites(favorites);
+    }
+
+    private void bindFavorites(List<Terrain> favorites) {
+        if (!isAdded()) return;
 
         if (terrainAdapter == null) {
             terrainAdapter = new TerrainAdapter(requireContext(), favorites, new TerrainAdapter.OnTerrainClickListener() {
@@ -75,7 +112,7 @@ public class FavoritesFragment extends Fragment {
 
                 @Override
                 public void onFavoriteClick(Terrain terrain) {
-                    sessionManager.toggleFavoriteTerrainId(terrain.getId());
+                    sessionManager.toggleFavoriteTerrain(terrain.getId());
                     refreshFavoritesList();
                 }
             });

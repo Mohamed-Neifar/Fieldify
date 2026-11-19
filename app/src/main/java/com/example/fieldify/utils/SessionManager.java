@@ -73,6 +73,10 @@ public class SessionManager {
         return getFavoriteTerrainIds().contains(terrainId);
     }
 
+    public boolean isFavoriteTerrain(String terrainId) {
+        return isTerrainFavorite(terrainId);
+    }
+
     public void toggleFavoriteTerrainId(String terrainId) {
         if (terrainId == null) return;
         String email = getUserEmail();
@@ -85,6 +89,10 @@ public class SessionManager {
         }
         editor.putStringSet(key, set);
         editor.apply();
+    }
+
+    public void toggleFavoriteTerrain(String terrainId) {
+        toggleFavoriteTerrainId(terrainId);
     }
 
     public void logout() {

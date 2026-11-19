@@ -115,13 +115,13 @@ public class MyMatchesFragment extends Fragment {
                     }
                     bindReservations(list);
                 } else {
-                    bindReservations(MockDataRepository.getInstance().getReservations());
+                    bindReservations(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<ReservationDto>> call, @NonNull Throwable t) {
-                bindReservations(MockDataRepository.getInstance().getReservations());
+                bindReservations(new ArrayList<>());
             }
         });
     }
@@ -144,13 +144,13 @@ public class MyMatchesFragment extends Fragment {
                     }
                     bindInvitations(list);
                 } else {
-                    bindInvitations(MockDataRepository.getInstance().getInvitations());
+                    bindInvitations(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<InvitationDto>> call, @NonNull Throwable t) {
-                bindInvitations(MockDataRepository.getInstance().getInvitations());
+                bindInvitations(new ArrayList<>());
             }
         });
     }
@@ -196,8 +196,10 @@ public class MyMatchesFragment extends Fragment {
             public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
                 if ("ACCEPTED".equals(actionStatus)) {
                     MockDataRepository.getInstance().acceptInvitation(invitation.getId());
+                    Toast.makeText(requireContext(), "Invitation acceptée !", Toast.LENGTH_SHORT).show();
                 } else {
                     MockDataRepository.getInstance().refuseInvitation(invitation.getId());
+                    Toast.makeText(requireContext(), "Invitation refusée.", Toast.LENGTH_SHORT).show();
                 }
                 refreshCurrentTabList();
             }

@@ -1,19 +1,80 @@
 package com.example.fieldify.network.model;
 
+import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ReservationDto {
+    @SerializedName("id")
     private Long id;
+
+    @SerializedName("terrain")
     private TerrainDto terrain;
+
+    @SerializedName("date")
     private String date;
+
+    @SerializedName("timeSlot")
     private String timeSlot;
+
+    @SerializedName("status")
     private String status;
+
+    @SerializedName("invitations")
+    private List<InvitationSummary> invitations;
+
+    @SerializedName("invitedFriends")
     private List<String> invitedFriends;
+
+    @SerializedName("invitedEmails")
     private List<String> invitedEmails;
+
+    @SerializedName("userEmail")
     private String userEmail;
+
+    @SerializedName("userName")
     private String userName;
 
     public ReservationDto() {
+    }
+
+    public static class InvitationSummary {
+        @SerializedName("id")
+        private Long id;
+
+        @SerializedName("invitedEmail")
+        private String invitedEmail;
+
+        @SerializedName("status")
+        private String status;
+
+        public InvitationSummary() {
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getInvitedEmail() {
+            return invitedEmail;
+        }
+
+        public void setInvitedEmail(String invitedEmail) {
+            this.invitedEmail = invitedEmail;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 
     public Long getId() {
@@ -63,11 +124,30 @@ public class ReservationDto {
         this.status = status;
     }
 
+    public List<InvitationSummary> getInvitations() {
+        return invitations;
+    }
+
+    public void setInvitations(List<InvitationSummary> invitations) {
+        this.invitations = invitations;
+    }
+
     public List<String> getInvitedFriends() {
-        if (invitedFriends != null && !invitedFriends.isEmpty()) {
-            return invitedFriends;
+        List<String> list = new ArrayList<>();
+        if (invitations != null && !invitations.isEmpty()) {
+            for (InvitationSummary inv : invitations) {
+                if (inv != null && inv.getInvitedEmail() != null && !inv.getInvitedEmail().trim().isEmpty()) {
+                    list.add(inv.getInvitedEmail().trim());
+                }
+            }
         }
-        return invitedEmails;
+        if (list.isEmpty() && invitedFriends != null && !invitedFriends.isEmpty()) {
+            list.addAll(invitedFriends);
+        }
+        if (list.isEmpty() && invitedEmails != null && !invitedEmails.isEmpty()) {
+            list.addAll(invitedEmails);
+        }
+        return list;
     }
 
     public void setInvitedFriends(List<String> invitedFriends) {
