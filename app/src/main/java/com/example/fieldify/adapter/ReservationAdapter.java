@@ -64,18 +64,27 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
         holder.tvTerrainName.setText("Match • " + terrainName);
         holder.tvDate.setText("Date : " + reservation.getDate());
 
-        if (reservation.getInvitedFriends() != null && !reservation.getInvitedFriends().isEmpty()) {
-            StringBuilder sb = new StringBuilder("Amis invités : ");
-            for (int i = 0; i < reservation.getInvitedFriends().size(); i++) {
-                sb.append(reservation.getInvitedFriends().get(i));
-                if (i < reservation.getInvitedFriends().size() - 1) {
-                    sb.append(", ");
+        if (reservation.isOrganizer()) {
+            holder.btnInviteFriend.setVisibility(View.VISIBLE);
+
+            if (reservation.getInvitedFriends() != null && !reservation.getInvitedFriends().isEmpty()) {
+                StringBuilder sb = new StringBuilder("Amis invités : ");
+                for (int i = 0; i < reservation.getInvitedFriends().size(); i++) {
+                    sb.append(reservation.getInvitedFriends().get(i));
+                    if (i < reservation.getInvitedFriends().size() - 1) {
+                        sb.append(", ");
+                    }
                 }
+                holder.tvInvitedFriends.setText(sb.toString());
+                holder.tvInvitedFriends.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvInvitedFriends.setText("Aucun ami invité pour le moment");
+                holder.tvInvitedFriends.setVisibility(View.VISIBLE);
             }
-            holder.tvInvitedFriends.setText(sb.toString());
-            holder.tvInvitedFriends.setVisibility(View.VISIBLE);
         } else {
-            holder.tvInvitedFriends.setText("Aucun ami invité pour le moment");
+            // Invited player who joined match
+            holder.btnInviteFriend.setVisibility(View.GONE);
+            holder.tvInvitedFriends.setText("Invité au match");
             holder.tvInvitedFriends.setVisibility(View.VISIBLE);
         }
 

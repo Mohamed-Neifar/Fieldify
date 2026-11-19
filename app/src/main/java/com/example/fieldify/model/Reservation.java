@@ -10,6 +10,7 @@ public class Reservation {
     private String timeSlot;
     private String status; // "Confirmé", "En attente", "Terminé"
     private List<String> invitedFriends;
+    private boolean organizer = true;
 
     public Reservation() {
         this.invitedFriends = new ArrayList<>();
@@ -22,6 +23,7 @@ public class Reservation {
         this.timeSlot = timeSlot;
         this.status = status;
         this.invitedFriends = invitedFriends != null ? invitedFriends : new ArrayList<>();
+        this.organizer = true;
     }
 
     public String getId() {
@@ -79,5 +81,13 @@ public class Reservation {
         if (!invitedFriends.contains(friend)) {
             invitedFriends.add(friend);
         }
+    }
+
+    public boolean isOrganizer() {
+        return organizer;
+    }
+
+    public void setOrganizer(boolean organizer) {
+        this.organizer = organizer;
     }
 }

@@ -26,6 +26,7 @@ import com.example.fieldify.network.model.InvitationDto;
 import com.example.fieldify.network.model.InviteFriendRequest;
 import com.example.fieldify.network.model.ReservationDto;
 import com.example.fieldify.network.model.RespondInvitationRequest;
+import com.example.fieldify.utils.SessionManager;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class MyMatchesFragment extends Fragment {
     private TabLayout tabLayout;
     private RecyclerView rvMatches;
     private TextView tvEmpty;
+    private SessionManager sessionManager;
 
     private int selectedTabPosition = 0;
 
@@ -47,6 +49,8 @@ public class MyMatchesFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_my_matches, container, false);
+
+        sessionManager = new SessionManager(requireContext());
 
         initViews(view);
         setupTabs();
@@ -110,8 +114,9 @@ public class MyMatchesFragment extends Fragment {
             public void onResponse(@NonNull Call<List<ReservationDto>> call, @NonNull Response<List<ReservationDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Reservation> list = new ArrayList<>();
+                    String currentEmail = sessionManager != null ? sessionManager.getUserEmail() : "";
                     for (ReservationDto dto : response.body()) {
-                        list.add(mapReservationDto(dto));
+                        list.add(mapReservationDto(dto, currentEmail));
                     }
                     bindReservations(list);
                 } else {
@@ -247,6 +252,10 @@ public class MyMatchesFragment extends Fragment {
     }
 
     public static Reservation mapReservationDto(ReservationDto dto) {
+        return mapReservationDto(dto, "");
+    }
+
+    public static Reservation mapReservationDto(ReservationDto dto, String currentUserEmail) {
         Reservation r = new Reservation();
         r.setId(dto.getId() != null ? String.valueOf(dto.getId()) : "r_" + System.currentTimeMillis());
         r.setDate(dto.getDate() != null ? dto.getDate() : "2026-11-24");
@@ -258,6 +267,14 @@ public class MyMatchesFragment extends Fragment {
             friends = dto.getInvitedEmails();
         }
         r.setInvitedFriends(friends != null ? friends : new ArrayList<>());
+
+        boolean isOrg = true;
+        if (dto.getIsOrganizer() != null) {
+            isOrg = dto.getIsOrganizer();
+        } else if (dto.getUserEmail() != null && currentUserEmail != null && !currentUserEmail.trim().isEmpty()) {
+            isOrg = dto.getUserEmail().equalsIgnoreCase(currentUserEmail);
+        }
+        r.setOrganizer(isOrg);
 
         if (dto.getTerrain() != null) {
             r.setTerrain(HomeFragment.mapDtoToTerrain(dto.getTerrain()));

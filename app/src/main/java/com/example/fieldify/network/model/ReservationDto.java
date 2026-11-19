@@ -36,6 +36,12 @@ public class ReservationDto {
     @SerializedName("userName")
     private String userName;
 
+    @SerializedName("isOrganizer")
+    private Boolean isOrganizer;
+
+    @SerializedName("organizer")
+    private Boolean organizer;
+
     public ReservationDto() {
     }
 
@@ -176,5 +182,15 @@ public class ReservationDto {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public Boolean getIsOrganizer() {
+        if (isOrganizer != null) return isOrganizer;
+        if (organizer != null) return organizer;
+        return true;
+    }
+
+    public void setIsOrganizer(Boolean isOrganizer) {
+        this.isOrganizer = isOrganizer;
     }
 }

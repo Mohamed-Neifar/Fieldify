@@ -31,7 +31,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.AuthResponse;
 import com.example.fieldify.network.model.SendOtpRequest;
+import com.example.fieldify.network.model.UserDto;
 import com.example.fieldify.network.model.VerifyOtpRequest;
+import com.example.fieldify.utils.SessionManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -162,9 +164,38 @@ public class VerifyEmailActivity extends AppCompatActivity {
             @Override
             public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
                 setLoadingState(false);
-                if (response.isSuccessful()) {
-                    Toast.makeText(VerifyEmailActivity.this, "Compte vérifié avec succès ! Veuillez vous connecter.", Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(VerifyEmailActivity.this, LoginActivity.class);
+                if (response.isSuccessful() && response.body() != null) {
+                    AuthResponse auth = response.body();
+                    SessionManager sessionManager = new SessionManager(VerifyEmailActivity.this);
+
+                    UserDto user = auth.getUser();
+                    if (user != null && user.getId() != null) {
+                        sessionManager.saveUserSession(
+                                user.getId(),
+                                user.getName(),
+                                user.getEmail(),
+                                user.getPhone(),
+                                user.getRole()
+                        );
+                    } else if (auth.getId() != null) {
+                        sessionManager.saveUserSession(
+                                auth.getId(),
+                                auth.getName(),
+                                auth.getEmail(),
+                                "",
+                                auth.getRole()
+                        );
+                    }
+
+                    Toast.makeText(VerifyEmailActivity.this, "Compte vérifié avec succès !", Toast.LENGTH_LONG).show();
+
+                    String role = sessionManager.getUserRole();
+                    Intent intent;
+                    if ("MANAGER".equalsIgnoreCase(role) || "GESTIONNAIRE".equalsIgnoreCase(role)) {
+                        intent = new Intent(VerifyEmailActivity.this, ManagerDashboardActivity.class);
+                    } else {
+                        intent = new Intent(VerifyEmailActivity.this, HomeActivity.class);
+                    }
                     startActivity(intent);
                     applyActivityTransition(R.anim.slide_in_left, R.anim.slide_out_right);
                     finish();
