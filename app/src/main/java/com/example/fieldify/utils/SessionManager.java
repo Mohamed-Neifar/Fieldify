@@ -3,6 +3,9 @@ package com.example.fieldify.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class SessionManager {
 
     private static final String PREF_NAME = "fieldify_session";
@@ -57,6 +60,31 @@ public class SessionManager {
 
     public String getUserRole() {
         return pref.getString(KEY_USER_ROLE, "JOUEUR");
+    }
+
+    public Set<String> getFavoriteTerrainIds() {
+        String email = getUserEmail();
+        String key = "favorites_" + (email != null && !email.trim().isEmpty() ? email.toLowerCase().trim() : "guest");
+        return pref.getStringSet(key, new HashSet<>());
+    }
+
+    public boolean isTerrainFavorite(String terrainId) {
+        if (terrainId == null) return false;
+        return getFavoriteTerrainIds().contains(terrainId);
+    }
+
+    public void toggleFavoriteTerrainId(String terrainId) {
+        if (terrainId == null) return;
+        String email = getUserEmail();
+        String key = "favorites_" + (email != null && !email.trim().isEmpty() ? email.toLowerCase().trim() : "guest");
+        Set<String> set = new HashSet<>(getFavoriteTerrainIds());
+        if (set.contains(terrainId)) {
+            set.remove(terrainId);
+        } else {
+            set.add(terrainId);
+        }
+        editor.putStringSet(key, set);
+        editor.apply();
     }
 
     public void logout() {

@@ -16,7 +16,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fieldify.adapter.TerrainAdapter;
 import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
+import com.example.fieldify.utils.SessionManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FavoritesFragment extends Fragment {
@@ -24,12 +26,14 @@ public class FavoritesFragment extends Fragment {
     private RecyclerView rvFavorites;
     private TextView tvEmpty;
     private TerrainAdapter terrainAdapter;
+    private SessionManager sessionManager;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_favorites, container, false);
 
+        sessionManager = new SessionManager(requireContext());
         rvFavorites = view.findViewById(R.id.rv_favorites);
         tvEmpty = view.findViewById(R.id.tv_empty_favorites);
 
@@ -49,7 +53,16 @@ public class FavoritesFragment extends Fragment {
     }
 
     private void refreshFavoritesList() {
-        List<Terrain> favorites = MockDataRepository.getInstance().getFavoriteTerrains();
+        List<Terrain> allTerrains = MockDataRepository.getInstance().getTerrains();
+        List<Terrain> favorites = new ArrayList<>();
+
+        for (Terrain t : allTerrains) {
+            boolean isFav = sessionManager.isTerrainFavorite(t.getId());
+            t.setFavorite(isFav);
+            if (isFav) {
+                favorites.add(t);
+            }
+        }
 
         if (terrainAdapter == null) {
             terrainAdapter = new TerrainAdapter(requireContext(), favorites, new TerrainAdapter.OnTerrainClickListener() {
@@ -62,7 +75,7 @@ public class FavoritesFragment extends Fragment {
 
                 @Override
                 public void onFavoriteClick(Terrain terrain) {
-                    MockDataRepository.getInstance().toggleFavorite(terrain.getId());
+                    sessionManager.toggleFavoriteTerrainId(terrain.getId());
                     refreshFavoritesList();
                 }
             });

@@ -165,6 +165,7 @@
 
                     <!-- Parking -->
                     <LinearLayout
+                        android:id="@+id/eq_parking"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -188,6 +189,7 @@
 
                     <!-- Vestiaires -->
                     <LinearLayout
+                        android:id="@+id/eq_vestiaires"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -211,6 +213,7 @@
 
                     <!-- Éclairage LED -->
                     <LinearLayout
+                        android:id="@+id/eq_light"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -234,6 +237,7 @@
 
                     <!-- Café -->
                     <LinearLayout
+                        android:id="@+id/eq_cafe"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -257,6 +261,7 @@
 
                     <!-- Douches -->
                     <LinearLayout
+                        android:id="@+id/eq_shower"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"

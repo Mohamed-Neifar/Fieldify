@@ -85,8 +85,8 @@ public class ManagerRequestsFragment extends Fragment {
                 }
 
                 @Override
-                public void onRefuse(Reservation reservation) {
-                    updateStatusOnServer(reservation, "REJECTED", "Réservation refusée.");
+                public void onRefuse(Reservation reservation, String reason) {
+                    updateStatusOnServer(reservation, "REJECTED", "Réservation refusée : " + reason);
                 }
             });
             rvRequests.setAdapter(adapter);

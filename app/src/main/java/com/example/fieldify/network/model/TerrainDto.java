@@ -1,21 +1,50 @@
 package com.example.fieldify.network.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class TerrainDto {
+    @SerializedName("id")
     private Long id;
+
+    @SerializedName("name")
     private String name;
+
+    @SerializedName("category")
     private String category;
+
+    @SerializedName("sportName")
     private String sportName;
-    private SportDto sport;
+
+    @SerializedName("sport")
+    private String sport;
+
+    @SerializedName("city")
     private String city;
+
+    @SerializedName("zone")
     private String zone;
+
+    @SerializedName("address")
     private String address;
+
+    @SerializedName("pricePerHour")
     private Double pricePerHour;
+
+    @SerializedName("rating")
     private Double rating;
+
+    @SerializedName("description")
     private String description;
+
+    @SerializedName("equipments")
     private List<String> equipments;
+
+    @SerializedName("imageUrls")
     private List<String> imageUrls;
+
+    @SerializedName("active")
     private Boolean active;
 
     public TerrainDto() {
@@ -37,21 +66,12 @@ public class TerrainDto {
         this.name = name;
     }
 
-    public String getCategory() {
-        if (category != null && !category.trim().isEmpty()) {
-            return category;
-        }
-        if (sportName != null && !sportName.trim().isEmpty()) {
-            return sportName;
-        }
-        if (sport != null && sport.getName() != null && !sport.getName().trim().isEmpty()) {
-            return sport.getName();
-        }
-        return "Football";
+    public String getSport() {
+        return sport;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setSport(String sport) {
+        this.sport = sport;
     }
 
     public String getSportName() {
@@ -62,19 +82,28 @@ public class TerrainDto {
         this.sportName = sportName;
     }
 
-    public SportDto getSport() {
-        return sport;
+    public String getCategory() {
+        if (sport != null && !sport.trim().isEmpty()) {
+            return sport;
+        }
+        if (sportName != null && !sportName.trim().isEmpty()) {
+            return sportName;
+        }
+        if (category != null && !category.trim().isEmpty()) {
+            return category;
+        }
+        return "Football";
     }
 
-    public void setSport(SportDto sport) {
-        this.sport = sport;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getCity() {
         if (city != null && !city.trim().isEmpty()) {
             return city;
         }
-        return zone != null ? zone : "Sfax, Tunisie";
+        return zone != null && !zone.trim().isEmpty() ? zone : "Sfax, Tunisie";
     }
 
     public void setCity(String city) {
@@ -85,7 +114,7 @@ public class TerrainDto {
         if (zone != null && !zone.trim().isEmpty()) {
             return zone;
         }
-        return city != null ? city : "Sfax, Tunisie";
+        return city != null && !city.trim().isEmpty() ? city : "Sfax, Tunisie";
     }
 
     public void setZone(String zone) {

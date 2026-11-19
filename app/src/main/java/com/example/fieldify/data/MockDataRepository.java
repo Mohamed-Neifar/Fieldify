@@ -47,7 +47,7 @@ public class MockDataRepository {
                 "Terrain en gazon synthétique de dernière génération 5v5 et 7v7, avec éclairage LED haute intensité et vestiaires haut de gamme.",
                 standardEquipments,
                 Arrays.asList(R.drawable.footbalfieldimg1, R.drawable.footbalfieldimg2, R.drawable.footbalfieldimg3, R.drawable.footbalfieldimg4),
-                true
+                false
         );
 
         // 2. Sfax Padel Club (Padel)
@@ -62,7 +62,7 @@ public class MockDataRepository {
                 "Pistes de Padel panoramiques aux normes internationales avec vitre renforcée, gazon bleu haute densité et lounge VIP.",
                 standardEquipments,
                 Arrays.asList(R.drawable.padelfield),
-                true
+                false
         );
 
         // 3. Tennis Club Sfax (Tennis)

@@ -24,6 +24,7 @@ import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.SportDto;
 import com.example.fieldify.network.model.TerrainDto;
+import com.example.fieldify.utils.SessionManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.slider.Slider;
 
@@ -44,6 +45,7 @@ public class HomeFragment extends Fragment {
     private TextView tvEmpty;
 
     private TerrainAdapter terrainAdapter;
+    private SessionManager sessionManager;
 
     private String selectedCategory = "Tous";
     private String searchQuery = "";
@@ -53,6 +55,8 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
+
+        sessionManager = new SessionManager(requireContext());
 
         initViews(view);
         setupCategories();
@@ -132,6 +136,10 @@ public class HomeFragment extends Fragment {
 
     private void setupTerrains() {
         List<Terrain> initialTerrains = MockDataRepository.getInstance().getTerrains();
+        for (Terrain t : initialTerrains) {
+            t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
+        }
+
         terrainAdapter = new TerrainAdapter(requireContext(), initialTerrains, new TerrainAdapter.OnTerrainClickListener() {
             @Override
             public void onTerrainClick(Terrain terrain) {
@@ -142,7 +150,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFavoriteClick(Terrain terrain) {
-                MockDataRepository.getInstance().toggleFavorite(terrain.getId());
+                sessionManager.toggleFavoriteTerrainId(terrain.getId());
                 refreshTerrainsList();
             }
         });
@@ -181,7 +189,9 @@ public class HomeFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Terrain> apiTerrains = new ArrayList<>();
                     for (TerrainDto dto : response.body()) {
-                        apiTerrains.add(mapDtoToTerrain(dto));
+                        Terrain t = mapDtoToTerrain(dto);
+                        t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
+                        apiTerrains.add(t);
                     }
                     if (terrainAdapter != null) {
                         terrainAdapter.updateData(apiTerrains);
@@ -203,6 +213,9 @@ public class HomeFragment extends Fragment {
 
     private void fallbackToMockTerrains() {
         List<Terrain> filtered = MockDataRepository.getInstance().filterTerrains(selectedCategory, searchQuery, maxPriceFilter, null);
+        for (Terrain t : filtered) {
+            t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
+        }
         if (terrainAdapter != null) {
             terrainAdapter.updateData(filtered);
         }

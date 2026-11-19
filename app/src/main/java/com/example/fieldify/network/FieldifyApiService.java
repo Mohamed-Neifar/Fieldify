@@ -9,6 +9,7 @@ import com.example.fieldify.network.model.RespondInvitationRequest;
 import com.example.fieldify.network.model.SportDto;
 import com.example.fieldify.network.model.TerrainDto;
 import com.example.fieldify.network.model.UpdateReservationStatusRequest;
+import com.example.fieldify.network.model.UserDto;
 
 import java.util.List;
 
@@ -27,6 +28,9 @@ public interface FieldifyApiService {
 
     @GET("api/sports")
     Call<List<SportDto>> getSports();
+
+    @GET("api/users/players")
+    Call<List<UserDto>> getRegisteredPlayers();
 
     @GET("api/terrains")
     Call<List<TerrainDto>> getTerrains(

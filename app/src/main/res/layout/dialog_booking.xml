@@ -97,7 +97,7 @@
             android:textColor="@color/text_primary" />
     </RadioGroup>
 
-    <!-- Invite Friends Input -->
+    <!-- Invite Friends AutoCompleteInput -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -107,15 +107,16 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/et_invited_friends"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="8dp"
         android:autofillHints="name"
         android:background="@drawable/selector_input_field"
-        android:hint="Ex: ahmed, youssef@gmail.com"
-        android:inputType="textPersonName"
+        android:completionThreshold="1"
+        android:hint="Sélectionnez un joueur ou saisissez un e-mail..."
+        android:inputType="textEmailAddress|textPersonName"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
         android:textColor="@color/text_primary"

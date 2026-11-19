@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,10 +15,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fieldify.adapter.TerrainAdapter;
-import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.TerrainDto;
+import com.example.fieldify.utils.SessionManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -32,11 +33,14 @@ public class ManagerTerrainsFragment extends Fragment {
     private RecyclerView rvTerrains;
     private TextView tvEmpty;
     private TerrainAdapter adapter;
+    private SessionManager sessionManager;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_manager_terrains, container, false);
+
+        sessionManager = new SessionManager(requireContext());
 
         rvTerrains = view.findViewById(R.id.rv_manager_terrains);
         tvEmpty = view.findViewById(R.id.tv_empty_manager_terrains);
@@ -55,28 +59,54 @@ public class ManagerTerrainsFragment extends Fragment {
     }
 
     @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        refreshTerrains();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         refreshTerrains();
     }
 
     private void refreshTerrains() {
+        if (!isAdded()) return;
+
+        if (sessionManager == null) {
+            sessionManager = new SessionManager(requireContext());
+        }
+
+        if (sessionManager.getUserId() <= 0) {
+            Toast.makeText(requireContext(), "Session expirée, veuillez vous reconnecter", Toast.LENGTH_LONG).show();
+        }
+
         RetrofitClient.getFieldifyApiService(requireContext()).getManagerTerrains().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<TerrainDto>> call, @NonNull Response<List<TerrainDto>> response) {
+                if (!isAdded()) return;
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<Terrain> list = new ArrayList<>();
                     for (TerrainDto dto : response.body()) {
-                        list.add(HomeFragment.mapDtoToTerrain(dto));
+                        Terrain t = HomeFragment.mapDtoToTerrain(dto);
+                        t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
+                        list.add(t);
                     }
                     bindTerrains(list);
                 } else {
+                    String errorMsg = "Erreur chargement terrains : " + response.code();
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
                     bindTerrains(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+
+                String errorMsg = "Erreur chargement terrains : " + (t.getMessage() != null ? t.getMessage() : "Connexion réseau impossible");
+                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
                 bindTerrains(new ArrayList<>());
             }
         });
@@ -85,8 +115,16 @@ public class ManagerTerrainsFragment extends Fragment {
     private void bindTerrains(List<Terrain> terrains) {
         if (!isAdded()) return;
 
+        if (terrains != null && !terrains.isEmpty()) {
+            if (rvTerrains != null) rvTerrains.setVisibility(View.VISIBLE);
+            if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
+        } else {
+            if (rvTerrains != null) rvTerrains.setVisibility(View.GONE);
+            if (tvEmpty != null) tvEmpty.setVisibility(View.VISIBLE);
+        }
+
         if (adapter == null) {
-            adapter = new TerrainAdapter(requireContext(), terrains, new TerrainAdapter.OnTerrainClickListener() {
+            adapter = new TerrainAdapter(requireContext(), terrains != null ? terrains : new ArrayList<>(), new TerrainAdapter.OnTerrainClickListener() {
                 @Override
                 public void onTerrainClick(Terrain terrain) {
                     Intent intent = new Intent(requireContext(), TerrainDetailActivity.class);
@@ -96,17 +134,13 @@ public class ManagerTerrainsFragment extends Fragment {
 
                 @Override
                 public void onFavoriteClick(Terrain terrain) {
-                    MockDataRepository.getInstance().toggleFavorite(terrain.getId());
+                    sessionManager.toggleFavoriteTerrainId(terrain.getId());
                     refreshTerrains();
                 }
             });
             rvTerrains.setAdapter(adapter);
         } else {
-            adapter.updateData(terrains);
-        }
-
-        if (tvEmpty != null) {
-            tvEmpty.setVisibility(terrains.isEmpty() ? View.VISIBLE : View.GONE);
+            adapter.updateData(terrains != null ? terrains : new ArrayList<>());
         }
     }
 }

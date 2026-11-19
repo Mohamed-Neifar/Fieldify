@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,7 +23,7 @@ public class ManagerRequestAdapter extends RecyclerView.Adapter<ManagerRequestAd
 
     public interface OnRequestActionListener {
         void onAccept(Reservation reservation);
-        void onRefuse(Reservation reservation);
+        void onRefuse(Reservation reservation, String reason);
     }
 
     private final Context context;
@@ -62,17 +63,21 @@ public class ManagerRequestAdapter extends RecyclerView.Adapter<ManagerRequestAd
             holder.tvUser.setText("Réservation individuelle");
         }
 
-        if ("Confirmé".equalsIgnoreCase(res.getStatus())) {
+        String status = res.getStatus();
+        if ("Confirmé".equalsIgnoreCase(status) || "Confirmé (Payé)".equalsIgnoreCase(status) || "CONFIRMED".equalsIgnoreCase(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_badge_status_confirmed);
             holder.tvStatus.setTextColor(Color.parseColor("#10B981"));
+            holder.tvStatus.setText("Confirmé (Payé)".equalsIgnoreCase(status) ? "Confirmé (Payé)" : "Confirmé");
             holder.layoutActions.setVisibility(View.GONE);
-        } else if ("Refusé".equalsIgnoreCase(res.getStatus())) {
+        } else if ("Refusé".equalsIgnoreCase(status) || "REJECTED".equalsIgnoreCase(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_chip_category_inactive);
             holder.tvStatus.setTextColor(Color.parseColor("#EF4444"));
+            holder.tvStatus.setText("Refusé");
             holder.layoutActions.setVisibility(View.GONE);
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_badge_status_pending);
             holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.orange_primary));
+            holder.tvStatus.setText("En attente");
             holder.layoutActions.setVisibility(View.VISIBLE);
         }
 
@@ -82,11 +87,21 @@ public class ManagerRequestAdapter extends RecyclerView.Adapter<ManagerRequestAd
             }
         });
 
-        holder.btnRefuse.setOnClickListener(v -> {
+        holder.btnRefuse.setOnClickListener(v -> showRefusalReasonDialog(res));
+    }
+
+    private void showRefusalReasonDialog(Reservation res) {
+        String[] reasons = new String[]{"Maintenance du terrain", "Intempéries", "Créneau pris au guichet"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Sélectionner un motif de refus");
+        builder.setItems(reasons, (dialog, which) -> {
+            String selectedReason = reasons[which];
             if (listener != null) {
-                listener.onRefuse(res);
+                listener.onRefuse(res, selectedReason);
             }
         });
+        builder.setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss());
+        builder.show();
     }
 
     @Override

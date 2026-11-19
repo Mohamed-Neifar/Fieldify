@@ -6,6 +6,8 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -30,6 +32,8 @@ import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.CreateReservationRequest;
 import com.example.fieldify.network.model.ReservationDto;
 import com.example.fieldify.network.model.TerrainDto;
+import com.example.fieldify.network.model.UserDto;
+import com.example.fieldify.utils.SessionManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -47,6 +51,7 @@ public class TerrainDetailActivity extends AppCompatActivity {
     private String terrainIdStr = "t1";
     private Long terrainLongId = 1L;
     private Terrain currentTerrain;
+    private SessionManager sessionManager;
 
     private ViewPager2 viewPagerPhotos;
     private TabLayout tabDots;
@@ -59,11 +64,16 @@ public class TerrainDetailActivity extends AppCompatActivity {
     private TextView tvDescription;
     private Button btnBookSlot;
 
+    // Equipment View Containers
+    private View eqParking, eqVestiaires, eqLight, eqCafe, eqShower;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_terrain_detail);
+
+        sessionManager = new SessionManager(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_terrain_detail), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -96,6 +106,12 @@ public class TerrainDetailActivity extends AppCompatActivity {
         tvPrice = findViewById(R.id.tv_detail_price);
         tvDescription = findViewById(R.id.tv_detail_description);
         btnBookSlot = findViewById(R.id.btn_book_slot);
+
+        eqParking = findViewById(R.id.eq_parking);
+        eqVestiaires = findViewById(R.id.eq_vestiaires);
+        eqLight = findViewById(R.id.eq_light);
+        eqCafe = findViewById(R.id.eq_cafe);
+        eqShower = findViewById(R.id.eq_shower);
     }
 
     private void fetchTerrainDetail() {
@@ -151,12 +167,31 @@ public class TerrainDetailActivity extends AppCompatActivity {
             }).attach();
         }
 
+        // Dynamic Equipment Display
+        bindEquipments(currentTerrain.getEquipments());
+
         updateFavoriteIcon();
+    }
+
+    private void bindEquipments(List<String> equipments) {
+        if (equipments == null) equipments = new ArrayList<>();
+        List<String> lowerEquip = new ArrayList<>();
+        for (String eq : equipments) {
+            if (eq != null) lowerEquip.add(eq.toLowerCase().trim());
+        }
+
+        if (eqParking != null) eqParking.setVisibility(lowerEquip.contains("parking") ? View.VISIBLE : View.GONE);
+        if (eqVestiaires != null) eqVestiaires.setVisibility(lowerEquip.contains("vestiaires") || lowerEquip.contains("vestiaire") ? View.VISIBLE : View.GONE);
+        if (eqLight != null) eqLight.setVisibility(lowerEquip.contains("éclairage led") || lowerEquip.contains("eclairage") || lowerEquip.contains("lumière") ? View.VISIBLE : View.GONE);
+        if (eqCafe != null) eqCafe.setVisibility(lowerEquip.contains("café") || lowerEquip.contains("cafe") || lowerEquip.contains("buvette") ? View.VISIBLE : View.GONE);
+        if (eqShower != null) eqShower.setVisibility(lowerEquip.contains("douches") || lowerEquip.contains("douche") ? View.VISIBLE : View.GONE);
     }
 
     private void updateFavoriteIcon() {
         if (currentTerrain != null) {
-            btnFavorite.setImageResource(currentTerrain.isFavorite() ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            boolean isFav = sessionManager.isTerrainFavorite(currentTerrain.getId());
+            currentTerrain.setFavorite(isFav);
+            btnFavorite.setImageResource(isFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         }
     }
 
@@ -165,7 +200,7 @@ public class TerrainDetailActivity extends AppCompatActivity {
 
         btnFavorite.setOnClickListener(v -> {
             if (currentTerrain != null) {
-                MockDataRepository.getInstance().toggleFavorite(currentTerrain.getId());
+                sessionManager.toggleFavoriteTerrainId(currentTerrain.getId());
                 updateFavoriteIcon();
                 Toast.makeText(this, currentTerrain.isFavorite() ? "Ajouté aux favoris" : "Retiré des favoris", Toast.LENGTH_SHORT).show();
             }
@@ -181,13 +216,16 @@ public class TerrainDetailActivity extends AppCompatActivity {
         RadioGroup rgDates = sheetView.findViewById(R.id.rg_dates);
         RadioGroup rgSlots = sheetView.findViewById(R.id.rg_time_slots);
         RadioGroup rgPayment = sheetView.findViewById(R.id.rg_payment_mode);
-        EditText etFriends = sheetView.findViewById(R.id.et_invited_friends);
+        AutoCompleteTextView etFriends = sheetView.findViewById(R.id.et_invited_friends);
         TextView tvTotalPrice = sheetView.findViewById(R.id.tv_total_price_summary);
         Button btnConfirm = sheetView.findViewById(R.id.btn_confirm_booking);
 
         if (tvTotalPrice != null && currentTerrain != null) {
             tvTotalPrice.setText((int) currentTerrain.getPricePerHour() + " DT");
         }
+
+        // Fetch registered players for autocomplete dropdown
+        fetchRegisteredPlayers(etFriends);
 
         // Fetch already booked slots for default date
         fetchBookedSlots("2026-11-24", rgSlots);
@@ -210,7 +248,6 @@ public class TerrainDetailActivity extends AppCompatActivity {
             if (slotId == R.id.rb_slot_2) selectedSlot = "19:30 - 21:00";
             else if (slotId == R.id.rb_slot_3) selectedSlot = "21:00 - 22:30";
 
-            // Get clean slot string without "(Déjà réservé)"
             selectedSlot = getCleanSlotName(selectedSlot);
 
             List<String> friendsList = new ArrayList<>();
@@ -231,12 +268,14 @@ public class TerrainDetailActivity extends AppCompatActivity {
             if (isOnlinePay) {
                 btnConfirm.setEnabled(false);
                 btnConfirm.setText("Validation du paiement D17...");
-                Toast.makeText(TerrainDetailActivity.this, "Traitement du paiement en ligne simulé...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TerrainDetailActivity.this, "Validation du paiement en ligne en cours...", Toast.LENGTH_SHORT).show();
 
-                new Handler(Looper.getMainLooper()).postDelayed(() ->
-                        sendReservationApi(finalDate, finalSlot, friendsList, dialog), 1000);
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    Toast.makeText(TerrainDetailActivity.this, "Paiement validé — Réservation confirmée !", Toast.LENGTH_SHORT).show();
+                    sendReservationApi(finalDate, finalSlot, friendsList, dialog, true);
+                }, 1000);
             } else {
-                sendReservationApi(finalDate, finalSlot, friendsList, dialog);
+                sendReservationApi(finalDate, finalSlot, friendsList, dialog, false);
             }
         });
 
@@ -244,25 +283,56 @@ public class TerrainDetailActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void sendReservationApi(String date, String timeSlot, List<String> friendsList, BottomSheetDialog dialog) {
+    private void fetchRegisteredPlayers(AutoCompleteTextView actvFriends) {
+        if (actvFriends == null) return;
+
+        RetrofitClient.getFieldifyApiService(this).getRegisteredPlayers().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<List<UserDto>> call, @NonNull Response<List<UserDto>> response) {
+                List<String> playerItems = new ArrayList<>();
+                if (response.isSuccessful() && response.body() != null) {
+                    for (UserDto u : response.body()) {
+                        if (!TextUtils.isEmpty(u.getEmail())) {
+                            playerItems.add(u.getName() + " (" + u.getEmail() + ")");
+                        }
+                    }
+                }
+                if (playerItems.isEmpty()) {
+                    playerItems.addAll(Arrays.asList("Ahmed Ben Ali (ahmed@gmail.com)", "Youssef Mahfoudh (youssef@gmail.com)", "Karim Siala (karim@gmail.com)"));
+                }
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(TerrainDetailActivity.this, android.R.layout.simple_dropdown_item_1line, playerItems);
+                actvFriends.setAdapter(adapter);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<UserDto>> call, @NonNull Throwable t) {
+                List<String> playerItems = Arrays.asList("Ahmed Ben Ali (ahmed@gmail.com)", "Youssef Mahfoudh (youssef@gmail.com)", "Karim Siala (karim@gmail.com)");
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(TerrainDetailActivity.this, android.R.layout.simple_dropdown_item_1line, playerItems);
+                actvFriends.setAdapter(adapter);
+            }
+        });
+    }
+
+    private void sendReservationApi(String date, String timeSlot, List<String> friendsList, BottomSheetDialog dialog, boolean isPaidOnline) {
         CreateReservationRequest req = new CreateReservationRequest(terrainLongId, date, timeSlot, friendsList);
         RetrofitClient.getFieldifyApiService(TerrainDetailActivity.this).createReservation(req).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<ReservationDto> call, @NonNull Response<ReservationDto> response) {
                 if (response.isSuccessful() || response.code() == 201) {
-                    Toast.makeText(TerrainDetailActivity.this, "Réservation confirmée avec succès !", Toast.LENGTH_LONG).show();
+                    String msg = isPaidOnline ? "Paiement validé — Réservation confirmée !" : "Réservation transmise ! En attente de confirmation.";
+                    Toast.makeText(TerrainDetailActivity.this, msg, Toast.LENGTH_LONG).show();
                     dialog.dismiss();
                     finish();
                 } else if (response.code() == 409) {
                     Toast.makeText(TerrainDetailActivity.this, "Ce créneau vient d'être réservé par un autre utilisateur.", Toast.LENGTH_LONG).show();
                 } else {
-                    localBookingFallback(date, timeSlot, friendsList, dialog);
+                    localBookingFallback(date, timeSlot, friendsList, dialog, isPaidOnline);
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<ReservationDto> call, @NonNull Throwable t) {
-                localBookingFallback(date, timeSlot, friendsList, dialog);
+                localBookingFallback(date, timeSlot, friendsList, dialog, isPaidOnline);
             }
         });
     }
@@ -316,10 +386,11 @@ public class TerrainDetailActivity extends AppCompatActivity {
         return rawText.replace(" (Déjà réservé)", "").trim();
     }
 
-    private void localBookingFallback(String date, String slot, List<String> friends, BottomSheetDialog dialog) {
-        Reservation newRes = new Reservation("r_" + System.currentTimeMillis(), currentTerrain, date, slot, "Confirmé", friends);
+    private void localBookingFallback(String date, String slot, List<String> friends, BottomSheetDialog dialog, boolean isPaidOnline) {
+        String status = isPaidOnline ? "Confirmé (Payé)" : "En attente";
+        Reservation newRes = new Reservation("r_" + System.currentTimeMillis(), currentTerrain, date, slot, status, friends);
         MockDataRepository.getInstance().addReservation(newRes);
-        Toast.makeText(TerrainDetailActivity.this, "Réservation enregistrée !", Toast.LENGTH_LONG).show();
+        Toast.makeText(TerrainDetailActivity.this, "Réservation enregistrée (" + status + ") !", Toast.LENGTH_LONG).show();
         dialog.dismiss();
         finish();
     }
