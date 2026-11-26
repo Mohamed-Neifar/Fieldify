@@ -1,6 +1,5 @@
 package com.example.fieldify;
 
-import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -20,8 +19,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.fieldify.data.MockDataRepository;
-import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.CreateTerrainRequest;
 import com.example.fieldify.network.model.TerrainDto;
@@ -223,21 +220,16 @@ public class AddTerrainActivity extends AppCompatActivity {
                 imageUrls
         );
 
-        final double finalPrice = price;
-        final List<String> finalEquipments = selectedEquipments;
-
         RetrofitClient.getFieldifyApiService(this).createManagerTerrain(request).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<TerrainDto> call, @NonNull Response<TerrainDto> response) {
                 btnPublish.setEnabled(true);
                 btnPublish.setText("Publier le terrain");
                 if (response.isSuccessful() && response.body() != null) {
-                    Terrain newTerrain = HomeFragment.mapDtoToTerrain(response.body());
-                    MockDataRepository.getInstance().addTerrain(newTerrain);
                     Toast.makeText(AddTerrainActivity.this, "Espace sportif " + title + " publié avec succès !", Toast.LENGTH_LONG).show();
                     finish();
                 } else {
-                    fallbackLocalPublish(title, selectedCategory, zone, address, finalPrice, description, finalEquipments, imageUrls);
+                    Toast.makeText(AddTerrainActivity.this, "Échec de la publication (" + response.code() + ").", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -245,30 +237,8 @@ public class AddTerrainActivity extends AppCompatActivity {
             public void onFailure(@NonNull Call<TerrainDto> call, @NonNull Throwable t) {
                 btnPublish.setEnabled(true);
                 btnPublish.setText("Publier le terrain");
-                fallbackLocalPublish(title, selectedCategory, zone, address, finalPrice, description, finalEquipments, imageUrls);
+                Toast.makeText(AddTerrainActivity.this, "Erreur réseau : " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    private void fallbackLocalPublish(String title, String category, String zone, String address, double price, String description, List<String> equipments, List<String> imageUrls) {
-        Terrain localTerrain = new Terrain(
-                "t_" + System.currentTimeMillis(),
-                title,
-                category,
-                zone,
-                TextUtils.isEmpty(address) ? zone : address,
-                price,
-                4.9,
-                description,
-                equipments,
-                Arrays.asList(R.drawable.img_welcome_sports),
-                false
-        );
-        if (imageUrls != null && !imageUrls.isEmpty()) {
-            localTerrain.setImageUrls(imageUrls);
-        }
-        MockDataRepository.getInstance().addTerrain(localTerrain);
-        Toast.makeText(this, "Espace sportif " + title + " publié !", Toast.LENGTH_LONG).show();
-        finish();
     }
 }

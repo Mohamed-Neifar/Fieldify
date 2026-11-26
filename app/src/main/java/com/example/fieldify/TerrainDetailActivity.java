@@ -1,8 +1,6 @@
 package com.example.fieldify;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,8 +23,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.fieldify.adapter.ImageSliderAdapter;
-import com.example.fieldify.data.MockDataRepository;
-import com.example.fieldify.model.Reservation;
 import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.CreateReservationRequest;
@@ -48,7 +44,7 @@ import retrofit2.Response;
 
 public class TerrainDetailActivity extends AppCompatActivity {
 
-    private String terrainIdStr = "t1";
+    private String terrainIdStr = "1";
     private Long terrainLongId = 1L;
     private Terrain currentTerrain;
     private SessionManager sessionManager;
@@ -122,28 +118,17 @@ public class TerrainDetailActivity extends AppCompatActivity {
                     currentTerrain = HomeFragment.mapDtoToTerrain(response.body());
                     bindData();
                 } else {
-                    fallbackToMockTerrain();
+                    Toast.makeText(TerrainDetailActivity.this, "Impossible de charger les détails du terrain.", Toast.LENGTH_SHORT).show();
+                    finish();
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<TerrainDto> call, @NonNull Throwable t) {
-                fallbackToMockTerrain();
+                Toast.makeText(TerrainDetailActivity.this, "Erreur réseau : " + t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                finish();
             }
         });
-    }
-
-    private void fallbackToMockTerrain() {
-        currentTerrain = MockDataRepository.getInstance().getTerrainById(terrainIdStr);
-        if (currentTerrain == null) {
-            Toast.makeText(this, "Espace non trouvé.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        if (currentTerrain.getImageResIds() == null || currentTerrain.getImageResIds().isEmpty()) {
-            currentTerrain.setImageResIds(Arrays.asList(R.drawable.img_welcome_sports));
-        }
-        bindData();
     }
 
     private void bindData() {
@@ -227,25 +212,22 @@ public class TerrainDetailActivity extends AppCompatActivity {
         // Fetch registered players for autocomplete dropdown
         fetchRegisteredPlayers(etFriends);
 
-        // Fetch already booked slots for default date
-        fetchBookedSlots("2026-11-24", rgSlots);
+        // Fetch already booked slots for default date ("2026-11-24")
+        final String[] activeDate = {"2026-11-24"};
+        fetchBookedSlots(activeDate[0], rgSlots);
 
         rgDates.setOnCheckedChangeListener((group, checkedId) -> {
-            String date = "2026-11-24";
-            if (checkedId == R.id.rb_date_2) date = "2026-11-25";
-            else if (checkedId == R.id.rb_date_3) date = "2026-11-26";
-            fetchBookedSlots(date, rgSlots);
+            if (checkedId == R.id.rb_date_1) activeDate[0] = "2026-11-24";
+            else if (checkedId == R.id.rb_date_2) activeDate[0] = "2026-11-25";
+            else if (checkedId == R.id.rb_date_3) activeDate[0] = "2026-11-26";
+            fetchBookedSlots(activeDate[0], rgSlots);
         });
 
         btnConfirm.setOnClickListener(v -> {
-            String selectedDate = "2026-11-24";
-            int dateId = rgDates.getCheckedRadioButtonId();
-            if (dateId == R.id.rb_date_2) selectedDate = "2026-11-25";
-            else if (dateId == R.id.rb_date_3) selectedDate = "2026-11-26";
-
             String selectedSlot = "18:00 - 19:30";
             int slotId = rgSlots.getCheckedRadioButtonId();
-            if (slotId == R.id.rb_slot_2) selectedSlot = "19:30 - 21:00";
+            if (slotId == R.id.rb_slot_1) selectedSlot = "18:00 - 19:30";
+            else if (slotId == R.id.rb_slot_2) selectedSlot = "19:30 - 21:00";
             else if (slotId == R.id.rb_slot_3) selectedSlot = "21:00 - 22:30";
 
             selectedSlot = getCleanSlotName(selectedSlot);
@@ -261,22 +243,17 @@ public class TerrainDetailActivity extends AppCompatActivity {
                 }
             }
 
-            final String finalDate = selectedDate;
-            final String finalSlot = selectedSlot;
             final boolean isOnlinePay = rgPayment != null && rgPayment.getCheckedRadioButtonId() == R.id.rb_pay_online;
-
             if (isOnlinePay) {
-                btnConfirm.setEnabled(false);
-                btnConfirm.setText("Validation du paiement D17...");
-                Toast.makeText(TerrainDetailActivity.this, "Validation du paiement en ligne en cours...", Toast.LENGTH_SHORT).show();
-
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Toast.makeText(TerrainDetailActivity.this, "Paiement validé — Réservation confirmée !", Toast.LENGTH_SHORT).show();
-                    sendReservationApi(finalDate, finalSlot, friendsList, dialog, true);
-                }, 1000);
-            } else {
-                sendReservationApi(finalDate, finalSlot, friendsList, dialog, false);
+                Toast.makeText(TerrainDetailActivity.this, "Le paiement en ligne n'est pas encore disponible. Veuillez choisir le paiement sur place.", Toast.LENGTH_LONG).show();
+                return;
             }
+
+            // Prevent duplicate submissions
+            btnConfirm.setEnabled(false);
+            btnConfirm.setText("Réservation en cours...");
+
+            sendReservationApi(activeDate[0], selectedSlot, friendsList, dialog, btnConfirm);
         });
 
         dialog.setContentView(sheetView);
@@ -297,47 +274,48 @@ public class TerrainDetailActivity extends AppCompatActivity {
                         }
                     }
                 }
-                if (playerItems.isEmpty()) {
-                    playerItems.addAll(Arrays.asList("Ahmed Ben Ali (ahmed@gmail.com)", "Youssef Mahfoudh (youssef@gmail.com)", "Karim Siala (karim@gmail.com)"));
-                }
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(TerrainDetailActivity.this, android.R.layout.simple_dropdown_item_1line, playerItems);
                 actvFriends.setAdapter(adapter);
             }
 
             @Override
             public void onFailure(@NonNull Call<List<UserDto>> call, @NonNull Throwable t) {
-                List<String> playerItems = Arrays.asList("Ahmed Ben Ali (ahmed@gmail.com)", "Youssef Mahfoudh (youssef@gmail.com)", "Karim Siala (karim@gmail.com)");
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(TerrainDetailActivity.this, android.R.layout.simple_dropdown_item_1line, playerItems);
-                actvFriends.setAdapter(adapter);
             }
         });
     }
 
-    private void sendReservationApi(String date, String timeSlot, List<String> friendsList, BottomSheetDialog dialog, boolean isPaidOnline) {
+    private void sendReservationApi(String date, String timeSlot, List<String> friendsList, BottomSheetDialog dialog, Button btnConfirm) {
         CreateReservationRequest req = new CreateReservationRequest(terrainLongId, date, timeSlot, friendsList);
         RetrofitClient.getFieldifyApiService(TerrainDetailActivity.this).createReservation(req).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<ReservationDto> call, @NonNull Response<ReservationDto> response) {
                 if (response.isSuccessful() || response.code() == 201) {
-                    String msg = isPaidOnline ? "Paiement validé — Réservation confirmée !" : "Réservation transmise ! En attente de confirmation.";
-                    Toast.makeText(TerrainDetailActivity.this, msg, Toast.LENGTH_LONG).show();
+                    Toast.makeText(TerrainDetailActivity.this, "Réservation confirmée avec succès !", Toast.LENGTH_LONG).show();
                     dialog.dismiss();
                     finish();
                 } else if (response.code() == 409) {
-                    Toast.makeText(TerrainDetailActivity.this, "Ce créneau vient d'être réservé par un autre utilisateur.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(TerrainDetailActivity.this, "Ce créneau vient d'être réservé par un autre utilisateur. Veuillez en choisir un autre.", Toast.LENGTH_LONG).show();
+                    btnConfirm.setEnabled(true);
+                    btnConfirm.setText("Confirmer la réservation");
+                    fetchBookedSlots(date, (RadioGroup) dialog.findViewById(R.id.rg_time_slots));
                 } else {
-                    localBookingFallback(date, timeSlot, friendsList, dialog, isPaidOnline);
+                    Toast.makeText(TerrainDetailActivity.this, "Erreur lors de la réservation (" + response.code() + ").", Toast.LENGTH_LONG).show();
+                    btnConfirm.setEnabled(true);
+                    btnConfirm.setText("Confirmer la réservation");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<ReservationDto> call, @NonNull Throwable t) {
-                localBookingFallback(date, timeSlot, friendsList, dialog, isPaidOnline);
+                Toast.makeText(TerrainDetailActivity.this, "Échec de connexion au serveur : " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                btnConfirm.setEnabled(true);
+                btnConfirm.setText("Confirmer la réservation");
             }
         });
     }
 
     private void fetchBookedSlots(String date, RadioGroup rgSlots) {
+        if (rgSlots == null) return;
         resetSlotsToAvailable(rgSlots);
 
         RetrofitClient.getFieldifyApiService(this).getBookedSlots(terrainLongId, date).enqueue(new Callback<>() {
@@ -384,14 +362,5 @@ public class TerrainDetailActivity extends AppCompatActivity {
     private String getCleanSlotName(String rawText) {
         if (rawText == null) return "";
         return rawText.replace(" (Déjà réservé)", "").trim();
-    }
-
-    private void localBookingFallback(String date, String slot, List<String> friends, BottomSheetDialog dialog, boolean isPaidOnline) {
-        String status = isPaidOnline ? "Confirmé (Payé)" : "En attente";
-        Reservation newRes = new Reservation("r_" + System.currentTimeMillis(), currentTerrain, date, slot, status, friends);
-        MockDataRepository.getInstance().addReservation(newRes);
-        Toast.makeText(TerrainDetailActivity.this, "Réservation enregistrée (" + status + ") !", Toast.LENGTH_LONG).show();
-        dialog.dismiss();
-        finish();
     }
 }

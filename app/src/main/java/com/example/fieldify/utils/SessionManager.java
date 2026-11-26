@@ -15,6 +15,7 @@ public class SessionManager {
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_PHONE = "user_phone";
     private static final String KEY_USER_ROLE = "user_role";
+    private static final String KEY_JWT_TOKEN = "jwt_token";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
@@ -25,17 +26,35 @@ public class SessionManager {
     }
 
     public void saveUserSession(long id, String name, String email, String role) {
-        saveUserSession(id, name, email, "", role);
+        saveUserSession(id, name, email, "", role, null);
     }
 
     public void saveUserSession(long id, String name, String email, String phone, String role) {
+        saveUserSession(id, name, email, phone, role, null);
+    }
+
+    public void saveUserSession(long id, String name, String email, String phone, String role, String token) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.putLong(KEY_USER_ID, id);
         editor.putString(KEY_USER_NAME, name != null ? name : "");
         editor.putString(KEY_USER_EMAIL, email != null ? email : "");
         editor.putString(KEY_USER_PHONE, phone != null ? phone : "");
         editor.putString(KEY_USER_ROLE, role != null ? role : "JOUEUR");
+        if (token != null && !token.trim().isEmpty()) {
+            editor.putString(KEY_JWT_TOKEN, token);
+        }
         editor.apply();
+    }
+
+    public void saveToken(String token) {
+        if (token != null) {
+            editor.putString(KEY_JWT_TOKEN, token);
+            editor.apply();
+        }
+    }
+
+    public String getToken() {
+        return pref.getString(KEY_JWT_TOKEN, "");
     }
 
     public boolean isLoggedIn() {

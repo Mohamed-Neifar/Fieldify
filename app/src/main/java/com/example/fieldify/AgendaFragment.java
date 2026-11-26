@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fieldify.adapter.ReservationAdapter;
-import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Reservation;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.ReservationDto;
@@ -89,28 +88,15 @@ public class AgendaFragment extends Fragment {
                             list.add(r);
                         }
                     }
-                } else {
-                    list = getLocalFilteredReservations(date);
                 }
                 bindAgendaList(list);
             }
 
             @Override
             public void onFailure(@NonNull Call<List<ReservationDto>> call, @NonNull Throwable t) {
-                bindAgendaList(getLocalFilteredReservations(date));
+                bindAgendaList(new ArrayList<>());
             }
         });
-    }
-
-    private List<Reservation> getLocalFilteredReservations(String date) {
-        List<Reservation> allReservations = MockDataRepository.getInstance().getReservations();
-        List<Reservation> filteredList = new ArrayList<>();
-        for (Reservation r : allReservations) {
-            if (isMatchForDateAndStatus(r, date)) {
-                filteredList.add(r);
-            }
-        }
-        return filteredList;
     }
 
     private boolean isMatchForDateAndStatus(Reservation r, String date) {

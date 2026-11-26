@@ -1,6 +1,7 @@
 package com.example.fieldify.network;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.example.fieldify.utils.SessionManager;
 
@@ -32,13 +33,9 @@ public class RetrofitClient {
                 Request.Builder builder = original.newBuilder();
 
                 if (sessionManager != null && sessionManager.isLoggedIn()) {
-                    long userId = sessionManager.getUserId();
-                    String email = sessionManager.getUserEmail();
-                    if (userId > 0) {
-                        builder.header("X-User-Id", String.valueOf(userId));
-                    }
-                    if (email != null && !email.trim().isEmpty()) {
-                        builder.header("X-User-Email", email);
+                    String token = sessionManager.getToken();
+                    if (!TextUtils.isEmpty(token)) {
+                        builder.header("Authorization", "Bearer " + token);
                     }
                 }
                 return chain.proceed(builder.build());

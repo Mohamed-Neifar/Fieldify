@@ -172,7 +172,7 @@ public class LoginActivity extends AppCompatActivity {
                     String userEmail = !TextUtils.isEmpty(auth.getEmail()) ? auth.getEmail() : email;
                     String role = !TextUtils.isEmpty(auth.getRole()) ? auth.getRole() : "JOUEUR";
 
-                    sessionManager.saveUserSession(userId, name, userEmail, role);
+                    sessionManager.saveUserSession(userId, name, userEmail, "", role, auth.getToken());
                     Toast.makeText(LoginActivity.this, R.string.toast_login_success, Toast.LENGTH_LONG).show();
 
                     redirectBasedOnRole(role);

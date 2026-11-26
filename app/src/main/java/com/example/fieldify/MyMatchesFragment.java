@@ -18,9 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fieldify.adapter.InvitationAdapter;
 import com.example.fieldify.adapter.ReservationAdapter;
-import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Invitation;
 import com.example.fieldify.model.Reservation;
+import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.InvitationDto;
 import com.example.fieldify.network.model.InviteFriendRequest;
@@ -112,16 +112,14 @@ public class MyMatchesFragment extends Fragment {
         RetrofitClient.getFieldifyApiService(requireContext()).getMyReservations().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<ReservationDto>> call, @NonNull Response<List<ReservationDto>> response) {
+                List<Reservation> list = new ArrayList<>();
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Reservation> list = new ArrayList<>();
                     String currentEmail = sessionManager != null ? sessionManager.getUserEmail() : "";
                     for (ReservationDto dto : response.body()) {
                         list.add(mapReservationDto(dto, currentEmail));
                     }
-                    bindReservations(list);
-                } else {
-                    bindReservations(new ArrayList<>());
                 }
+                bindReservations(list);
             }
 
             @Override
@@ -142,15 +140,13 @@ public class MyMatchesFragment extends Fragment {
         RetrofitClient.getFieldifyApiService(requireContext()).getMyInvitations().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<InvitationDto>> call, @NonNull Response<List<InvitationDto>> response) {
+                List<Invitation> list = new ArrayList<>();
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Invitation> list = new ArrayList<>();
                     for (InvitationDto dto : response.body()) {
                         list.add(mapInvitationDto(dto));
                     }
-                    bindInvitations(list);
-                } else {
-                    bindInvitations(new ArrayList<>());
                 }
+                bindInvitations(list);
             }
 
             @Override
@@ -187,26 +183,21 @@ public class MyMatchesFragment extends Fragment {
         RetrofitClient.getFieldifyApiService(requireContext()).respondInvitation(invId, new RespondInvitationRequest(actionStatus)).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
-                if ("ACCEPTED".equals(actionStatus)) {
-                    MockDataRepository.getInstance().acceptInvitation(invitation.getId());
-                    Toast.makeText(requireContext(), "Invitation acceptée !", Toast.LENGTH_SHORT).show();
+                if (response.isSuccessful()) {
+                    if ("ACCEPTED".equals(actionStatus)) {
+                        Toast.makeText(requireContext(), "Invitation acceptée !", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "Invitation refusée.", Toast.LENGTH_SHORT).show();
+                    }
+                    refreshCurrentTabList();
                 } else {
-                    MockDataRepository.getInstance().refuseInvitation(invitation.getId());
-                    Toast.makeText(requireContext(), "Invitation refusée.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Échec de la réponse à l'invitation.", Toast.LENGTH_SHORT).show();
                 }
-                refreshCurrentTabList();
             }
 
             @Override
             public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
-                if ("ACCEPTED".equals(actionStatus)) {
-                    MockDataRepository.getInstance().acceptInvitation(invitation.getId());
-                    Toast.makeText(requireContext(), "Invitation acceptée !", Toast.LENGTH_SHORT).show();
-                } else {
-                    MockDataRepository.getInstance().refuseInvitation(invitation.getId());
-                    Toast.makeText(requireContext(), "Invitation refusée.", Toast.LENGTH_SHORT).show();
-                }
-                refreshCurrentTabList();
+                Toast.makeText(requireContext(), "Erreur réseau : " + t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -232,16 +223,17 @@ public class MyMatchesFragment extends Fragment {
                 RetrofitClient.getFieldifyApiService(requireContext()).inviteFriend(resId, new InviteFriendRequest(friendName)).enqueue(new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
-                        MockDataRepository.getInstance().addInvitedFriendToReservation(reservation.getId(), friendName);
-                        Toast.makeText(requireContext(), friendName + " a été invité !", Toast.LENGTH_SHORT).show();
-                        fetchMyReservations();
+                        if (response.isSuccessful()) {
+                            Toast.makeText(requireContext(), friendName + " a été invité !", Toast.LENGTH_SHORT).show();
+                            fetchMyReservations();
+                        } else {
+                            Toast.makeText(requireContext(), "Échec de l'invitation.", Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
-                        MockDataRepository.getInstance().addInvitedFriendToReservation(reservation.getId(), friendName);
-                        Toast.makeText(requireContext(), friendName + " a été invité !", Toast.LENGTH_SHORT).show();
-                        fetchMyReservations();
+                        Toast.makeText(requireContext(), "Erreur réseau : " + t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -279,7 +271,9 @@ public class MyMatchesFragment extends Fragment {
         if (dto.getTerrain() != null) {
             r.setTerrain(HomeFragment.mapDtoToTerrain(dto.getTerrain()));
         } else {
-            r.setTerrain(MockDataRepository.getInstance().getTerrains().get(0));
+            Terrain defaultTerrain = new Terrain();
+            defaultTerrain.setName("Terrain Sportif");
+            r.setTerrain(defaultTerrain);
         }
         return r;
     }
@@ -294,7 +288,9 @@ public class MyMatchesFragment extends Fragment {
         if (dto.getTerrain() != null) {
             inv.setTerrain(HomeFragment.mapDtoToTerrain(dto.getTerrain()));
         } else {
-            inv.setTerrain(MockDataRepository.getInstance().getTerrains().get(0));
+            Terrain defaultTerrain = new Terrain();
+            defaultTerrain.setName("Terrain Sportif");
+            inv.setTerrain(defaultTerrain);
         }
         return inv;
     }

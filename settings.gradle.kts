@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Fieldify"
 include(":app")
+include(":backend")
  

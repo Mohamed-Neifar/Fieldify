@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fieldify.adapter.CategoryAdapter;
 import com.example.fieldify.adapter.TerrainAdapter;
-import com.example.fieldify.data.MockDataRepository;
 import com.example.fieldify.model.Terrain;
 import com.example.fieldify.network.RetrofitClient;
 import com.example.fieldify.network.model.SportDto;
@@ -135,12 +134,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupTerrains() {
-        List<Terrain> initialTerrains = MockDataRepository.getInstance().getTerrains();
-        for (Terrain t : initialTerrains) {
-            t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
-        }
-
-        terrainAdapter = new TerrainAdapter(requireContext(), initialTerrains, new TerrainAdapter.OnTerrainClickListener() {
+        terrainAdapter = new TerrainAdapter(requireContext(), new ArrayList<>(), new TerrainAdapter.OnTerrainClickListener() {
             @Override
             public void onTerrainClick(Terrain terrain) {
                 Intent intent = new Intent(requireContext(), TerrainDetailActivity.class);
@@ -186,42 +180,32 @@ public class HomeFragment extends Fragment {
         ).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<TerrainDto>> call, @NonNull Response<List<TerrainDto>> response) {
+                List<Terrain> apiTerrains = new ArrayList<>();
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Terrain> apiTerrains = new ArrayList<>();
                     for (TerrainDto dto : response.body()) {
                         Terrain t = mapDtoToTerrain(dto);
                         t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
                         apiTerrains.add(t);
                     }
-                    if (terrainAdapter != null) {
-                        terrainAdapter.updateData(apiTerrains);
-                    }
-                    if (tvEmpty != null) {
-                        tvEmpty.setVisibility(apiTerrains.isEmpty() ? View.VISIBLE : View.GONE);
-                    }
-                } else {
-                    fallbackToMockTerrains();
+                }
+                if (terrainAdapter != null) {
+                    terrainAdapter.updateData(apiTerrains);
+                }
+                if (tvEmpty != null) {
+                    tvEmpty.setVisibility(apiTerrains.isEmpty() ? View.VISIBLE : View.GONE);
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<TerrainDto>> call, @NonNull Throwable t) {
-                fallbackToMockTerrains();
+                if (terrainAdapter != null) {
+                    terrainAdapter.updateData(new ArrayList<>());
+                }
+                if (tvEmpty != null) {
+                    tvEmpty.setVisibility(View.VISIBLE);
+                }
             }
         });
-    }
-
-    private void fallbackToMockTerrains() {
-        List<Terrain> filtered = MockDataRepository.getInstance().filterTerrains(selectedCategory, searchQuery, maxPriceFilter, null);
-        for (Terrain t : filtered) {
-            t.setFavorite(sessionManager.isTerrainFavorite(t.getId()));
-        }
-        if (terrainAdapter != null) {
-            terrainAdapter.updateData(filtered);
-        }
-        if (tvEmpty != null) {
-            tvEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
-        }
     }
 
     public static Terrain mapDtoToTerrain(TerrainDto dto) {
